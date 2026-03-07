@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip3 install:*)",
+      "Bash(python manage.py runserver:*)",
+      "Bash(netstat:*)",
+      "Bash(python manage.py:*)",
+      "Bash(python -c \"import PIL; print\\(PIL.__version__\\)\" 2>&1)",
+      "Bash(pip3 install Pillow -q && python -c \"import PIL; print\\(PIL.__version__\\)\")",
+      "Bash(grep:*)",
+      "Bash(gh auth:*)",
+      "Bash(curl:*)",
+      "Bash(tee /etc/apt/sources.list.d/github-cli.list)",
+      "Bash(apt update -qq)",
+      "Bash(apt install gh -y -qq)",
+      "Bash(dnf:*)",
+      "Bash(git:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

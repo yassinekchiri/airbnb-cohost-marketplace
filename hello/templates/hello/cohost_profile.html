@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ cohost.user_profile.user.get_full_name|default:cohost.user_profile.user.username }} — Co-Host Profile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; color: #333; }
+        .header { background: linear-gradient(135deg, #FF385C, #E31C3D); color: white; padding: 1rem 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .nav { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 24px; font-weight: bold; }
+        .nav-links { display: flex; gap: 20px; align-items: center; }
+        .nav-links a { color: white; text-decoration: none; padding: 8px 16px; border-radius: 20px; transition: background 0.3s; }
+        .nav-links a:hover { background: rgba(255,255,255,0.2); }
+
+        .hero {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+            padding: 60px 20px 80px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(ellipse at 60% 0%, rgba(255,56,92,0.18) 0%, transparent 60%);
+        }
+        .avatar-wrap {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 22px;
+        }
+        .avatar-ring {
+            width: 130px; height: 130px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #FF385C, #ff6b35);
+            padding: 4px;
+            display: inline-flex;
+        }
+        .avatar-inner {
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            background: #2a2a4a;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 3.5rem;
+            overflow: hidden;
+        }
+        .avatar-inner img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+        .hero-name { font-size: 2rem; font-weight: 800; color: white; margin-bottom: 6px; position: relative; }
+        .hero-title { color: rgba(255,255,255,0.65); font-size: 1rem; position: relative; }
+        .hero-chips {
+            display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+            margin-top: 18px; position: relative;
+        }
+        .hero-chip {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+        }
+
+        .container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
+        .profile-body { display: grid; grid-template-columns: 1fr 320px; gap: 28px; margin-top: -30px; padding-bottom: 60px; }
+
+        .card { background: white; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); padding: 28px; margin-bottom: 20px; }
+        .card-title { font-size: 1.1rem; font-weight: 700; color: #333; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+
+        .bio-text { color: #555; line-height: 1.7; font-size: 0.97rem; }
+
+        .caps-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+        .cap-pill {
+            background: #f0faf4; color: #1a7a40;
+            border: 1px solid #b6e8ca;
+            border-radius: 20px; padding: 5px 14px;
+            font-size: 0.82rem; font-weight: 600;
+        }
+
+        .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .stat-box { background: #f8f9fa; border-radius: 12px; padding: 16px; text-align: center; }
+        .stat-val { font-size: 1.6rem; font-weight: 800; color: #FF385C; }
+        .stat-lbl { font-size: 0.75rem; color: #888; margin-top: 3px; }
+
+        .social-links { display: flex; flex-direction: column; gap: 10px; }
+        .social-link {
+            display: flex; align-items: center; gap: 10px;
+            text-decoration: none; color: #444;
+            padding: 10px 14px;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            transition: all .2s;
+        }
+        .social-link:hover { border-color: #FF385C; color: #FF385C; }
+        .social-link img { width: 20px; height: 20px; border-radius: 4px; }
+
+        .listing-item {
+            display: flex; gap: 14px; align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .listing-item:last-child { border-bottom: none; }
+        .listing-thumb {
+            width: 64px; height: 48px; border-radius: 8px;
+            background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem; flex-shrink: 0; overflow: hidden;
+        }
+        .listing-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+        .listing-name { font-weight: 600; font-size: 0.9rem; color: #333; margin-bottom: 3px; }
+        .listing-loc { font-size: 0.78rem; color: #999; }
+
+        .btn-contact {
+            display: block; width: 100%;
+            background: #FF385C; color: white;
+            border: none; border-radius: 12px;
+            padding: 14px; font-size: 1rem; font-weight: 700;
+            cursor: pointer; text-align: center; text-decoration: none;
+            transition: background .2s, transform .15s;
+            margin-bottom: 10px;
+        }
+        .btn-contact:hover { background: #E31C3D; transform: translateY(-1px); }
+        .btn-back {
+            display: block; width: 100%;
+            background: white; color: #666;
+            border: 1px solid #ddd; border-radius: 12px;
+            padding: 12px; font-size: 0.9rem; font-weight: 600;
+            cursor: pointer; text-align: center; text-decoration: none;
+            transition: all .2s;
+        }
+        .btn-back:hover { border-color: #aaa; color: #333; }
+
+        @media (max-width: 768px) {
+            .profile-body { grid-template-columns: 1fr; margin-top: -20px; }
+            .nav { flex-direction: column; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+    {% include 'hello/_nav.html' %}
+
+    <div class="hero">
+        <div class="avatar-wrap">
+            <div class="avatar-ring">
+                <div class="avatar-inner">
+                    {% if cohost.user_profile.profile_photo %}
+                        <img src="{{ cohost.user_profile.profile_photo.url }}" alt="">
+                    {% else %}
+                        👤
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="hero-name">{{ cohost.user_profile.user.get_full_name|default:cohost.user_profile.user.username }}</div>
+        <div class="hero-title">Professional Co-Host</div>
+        <div class="hero-chips">
+            {% if cohost.locations %}
+                <span class="hero-chip">📍 {{ cohost.locations }}</span>
+            {% endif %}
+            {% if cohost.experience_years %}
+                <span class="hero-chip">⭐ {{ cohost.experience_years }} yr{{ cohost.experience_years|pluralize }} experience</span>
+            {% endif %}
+            {% if cohost.hourly_rate %}
+                <span class="hero-chip">💰 ${{ cohost.hourly_rate }}/day</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="profile-body">
+
+            <!-- Left column -->
+            <div>
+                {% if cohost.bio %}
+                <div class="card">
+                    <div class="card-title">👋 About</div>
+                    <p class="bio-text">{{ cohost.bio }}</p>
+                </div>
+                {% endif %}
+
+                {% with caps=cohost.capabilities.all %}
+                {% if caps %}
+                <div class="card">
+                    <div class="card-title">🛠️ Capabilities</div>
+                    <div class="caps-grid">
+                        {% for cap in caps %}
+                            <span class="cap-pill">{{ cap.name }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                {% endwith %}
+
+                {% if managed_listings %}
+                <div class="card">
+                    <div class="card-title">🏠 Properties Managed</div>
+                    {% for proposal in managed_listings %}
+                    <div class="listing-item">
+                        <div class="listing-thumb">
+                            {% if proposal.listing.get_main_photo_url %}
+                                <img src="{{ proposal.listing.get_main_photo_url }}" alt="">
+                            {% else %}
+                                🏠
+                            {% endif %}
+                        </div>
+                        <div>
+                            <div class="listing-name">{{ proposal.listing.title|truncatechars:55 }}</div>
+                            <div class="listing-loc">📍 {{ proposal.listing.location }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Right column -->
+            <div>
+                <div class="card">
+                    <div class="stat-row" style="margin-bottom: 20px;">
+                        <div class="stat-box">
+                            <div class="stat-val">{{ cohost.experience_years|default:"—" }}</div>
+                            <div class="stat-lbl">Years exp.</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-val">{{ managed_listings|length }}</div>
+                            <div class="stat-lbl">Properties</div>
+                        </div>
+                    </div>
+
+                    {% if user.is_authenticated and user.userprofile.role == 'host' %}
+                        {% if conversation_proposal_id %}
+                            <a href="{% url 'conversation' conversation_proposal_id %}" class="btn-contact">💬 Message</a>
+                        {% elif can_message_directly %}
+                            <a href="{% url 'contact_user' cohost.id %}" class="btn-contact">💬 Message</a>
+                        {% endif %}
+                    {% elif not user.is_authenticated %}
+                        <a href="{% url 'login' %}" class="btn-contact">Login to Contact</a>
+                    {% endif %}
+                    <a href="{% url 'cohosts_marketplace' %}" class="btn-back">← Back to Co-Hosts</a>
+                </div>
+
+                {% if social_links %}
+                <div class="card">
+                    <div class="card-title">🔗 Profiles</div>
+                    <div class="social-links">
+                        {% for link in social_links %}
+                        <a href="{{ link.url }}" target="_blank" rel="noopener" class="social-link">
+                            <img src="https://cdn.simpleicons.org/{{ link.platform }}/FF385C" alt="{{ link.get_platform_display }}"
+                                 onerror="this.style.display='none'">
+                            {{ link.get_platform_display }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Browse Listings - Co-Host Marketplace</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #f8f9fa; 
+            color: #333; 
+        }
+        .header {
+            background: linear-gradient(135deg, #FF385C, #E31C3D);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: background 0.3s;
+        }
+        .nav-links a:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        .btn-primary {
+            background: white !important;
+            color: #FF385C !important;
+            font-weight: bold;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        .page-header {
+            padding: 40px 0;
+            text-align: center;
+        }
+        .page-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        .page-header p {
+            font-size: 1.1rem;
+            color: #666;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        .btn-filter { background: #FF385C; color: white; }
+        .btn-filter:hover { background: #E31C3D; }
+        /* ── Search bar ── */
+        .search-wrap {
+            max-width: 660px;
+            margin: 0 auto 36px;
+            position: relative;
+        }
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: white;
+            border-radius: 50px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(255,56,92,0.06);
+            padding: 8px 8px 8px 22px;
+            transition: box-shadow 0.25s;
+            position: relative;
+        }
+        .search-box:focus-within {
+            box-shadow: 0 8px 32px rgba(0,0,0,0.16), 0 0 0 3px rgba(255,56,92,0.15);
+        }
+        .search-pin { color: #FF385C; flex-shrink: 0; margin-right: 12px; opacity: .75; }
+        .search-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 1.05rem;
+            background: transparent;
+            color: #333;
+            min-width: 0;
+        }
+        .search-input::placeholder { color: #bbb; }
+        .search-clear-x {
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 1.3rem;
+            cursor: pointer;
+            padding: 0 10px;
+            line-height: 1;
+            transition: color .2s;
+            flex-shrink: 0;
+            align-items: center;
+            justify-content: center;
+        }
+        .search-clear-x:hover { color: #888; }
+        .search-btn {
+            flex-shrink: 0;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: #FF385C;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .2s, transform .15s, box-shadow .2s;
+            box-shadow: 0 4px 14px rgba(255,56,92,0.38);
+        }
+        .search-btn:hover { background: #E31C3D; transform: scale(1.07); box-shadow: 0 6px 20px rgba(255,56,92,0.5); }
+        .search-btn svg { color: white; display: block; }
+        .search-suggestions {
+            position: absolute;
+            top: calc(100% + 10px);
+            left: 0; right: 0;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.13);
+            overflow: hidden;
+            z-index: 300;
+            display: none;
+            animation: sugIn .18s ease;
+        }
+        @keyframes sugIn { from { opacity:0; transform:translateY(-6px) scale(.98); } to { opacity:1; transform:none; } }
+        .sug-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 18px;
+            cursor: pointer;
+            border-bottom: 1px solid #f5f5f5;
+            transition: background .14s;
+        }
+        .sug-item:last-child { border-bottom: none; }
+        .sug-item:hover { background: #fff5f6; }
+        .sug-icon { width:34px; height:34px; border-radius:50%; background:#fff0f2; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#FF385C; }
+        .sug-main { font-weight:600; font-size:.92rem; color:#222; }
+        .sug-sub  { font-size:.78rem; color:#aaa; margin-top:1px; }
+        .sug-loading { padding:14px 18px; color:#bbb; font-size:.88rem; display:flex; align-items:center; gap:10px; }
+        .clear-filter-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 12px;
+            color: #999;
+            font-size: .83rem;
+            text-decoration: none;
+            background: white;
+            border: 1px solid #e8e8e8;
+            border-radius: 20px;
+            padding: 5px 14px;
+            transition: all .2s;
+        }
+        .clear-filter-link:hover { border-color:#FF385C; color:#FF385C; }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+            position: relative;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .card-image {
+            height: 200px;
+            background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 40px;
+            position: relative;
+        }
+        .card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #FF385C;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-looking { background: #28a745; }
+        .status-reviewing { background: #ffc107; color: #333; }
+        .status-found { background: #0d6efd; }
+        .status-paused { background: #6c757d; }
+        .card-content {
+            padding: 20px;
+        }
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .card-meta {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .card-meta span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .card-description {
+            color: #555;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn-view {
+            background: #FF385C;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .btn-view:hover {
+            background: #E31C3D;
+        }
+        .host-info {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 15px;
+        }
+        .no-results h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #666;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 40px;
+        }
+        .pagination a, .pagination span {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #333;
+        }
+        .pagination a:hover {
+            background: #FF385C;
+            color: white;
+            border-color: #FF385C;
+        }
+        .pagination .current {
+            background: #FF385C;
+            color: white;
+            border-color: #FF385C;
+        }
+        @media (max-width: 768px) {
+            .nav { flex-direction: column; gap: 10px; }
+            .grid { grid-template-columns: 1fr; }
+            .card-footer { flex-direction: column; gap: 10px; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+    {% include 'hello/_nav.html' %}
+
+    <main>
+        <div class="container">
+            <div class="page-header">
+                <h1>🏠 Properties Looking for Co-Hosts</h1>
+                <p>Browse through amazing properties that need professional co-hosts to help manage them</p>
+            </div>
+
+            <div class="search-wrap">
+                <form method="get" onsubmit="closeSuggestions()" autocomplete="off">
+                    <div class="search-box">
+                        <svg class="search-pin" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
+                        </svg>
+                        <input
+                            id="location-input"
+                            class="search-input"
+                            type="text"
+                            name="location"
+                            placeholder="Search by city, region or country…"
+                            value="{{ location_filter }}"
+                            oninput="onSearchInput(this.value)"
+                            onkeydown="onSearchKeydown(event)"
+                        >
+                        <button type="button" class="search-clear-x" id="clear-x" onclick="clearSearch()" style="display:{{ location_filter|yesno:'flex,none' }}">✕</button>
+                        <button type="submit" class="search-btn" aria-label="Search">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="search-suggestions" id="suggestions"></div>
+                </form>
+                {% if location_filter %}
+                <div style="text-align:center;">
+                    <a href="{% url 'listings_marketplace' %}" class="clear-filter-link">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        Clear filter: "{{ location_filter }}"
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if page_obj %}
+                <div class="grid">
+                    {% for listing in page_obj %}
+                    <div class="card">
+                        {% if listing.get_main_photo_url %}
+                            <img src="{{ listing.get_main_photo_url }}" alt="{{ listing.title }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="card-image" style="display: none;">🏠</div>
+                        {% else %}
+                            <div class="card-image">🏠</div>
+                        {% endif %}
+                        
+                        <div class="status-badge status-{{ listing.status }}">
+                            {{ listing.get_status_display }}
+                        </div>
+
+                        <div class="card-content">
+                            <div class="card-title">{{ listing.title|truncatechars:60 }}</div>
+                            
+                            <div class="card-meta">
+                                <span>📍 {{ listing.location|truncatechars:30 }}</span>
+                                {% if listing.property_type %}
+                                    <span>🏡 {{ listing.property_type }}</span>
+                                {% endif %}
+                                {% if listing.guests_capacity %}
+                                    <span>👥 {{ listing.guests_capacity }}</span>
+                                {% endif %}
+                            </div>
+
+                            {% with needed=listing.tasks_needed.all %}
+                            {% if needed %}
+                            <div style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 4px;">
+                                {% for task in needed|slice:":4" %}<span style="background:#f0faf4;color:#1a7a40;border:1px solid #b6e8ca;border-radius:12px;padding:2px 10px;font-size:.72rem;font-weight:600;">{{ task.name }}</span>{% endfor %}
+                                {% if needed|length > 4 %}<span style="font-size:.72rem;color:#aaa;align-self:center;">+{{ needed|length|add:"-4" }} more</span>{% endif %}
+                            </div>
+                            {% endif %}
+                            {% endwith %}
+
+                            <div class="card-description">
+                                {% if listing.description %}
+                                    {{ listing.description|truncatechars:120 }}
+                                {% else %}
+                                    Looking for an experienced co-host to help manage this amazing property. Great opportunity for the right person!
+                                {% endif %}
+                            </div>
+
+                            <div class="card-footer">
+                                <div class="host-info">
+                                    Host: {{ listing.host.user_profile.user.first_name|default:"Anonymous" }}
+                                </div>
+                                <a href="{% url 'listing_detail' listing.id %}" class="btn-view">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                <div class="pagination">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1{% if location_filter %}&location={{ location_filter }}{% endif %}">&laquo; First</a>
+                        <a href="?page={{ page_obj.previous_page_number }}{% if location_filter %}&location={{ location_filter }}{% endif %}">Previous</a>
+                    {% endif %}
+
+                    <span class="current">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if location_filter %}&location={{ location_filter }}{% endif %}">Next</a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}{% if location_filter %}&location={{ location_filter }}{% endif %}">Last &raquo;</a>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+            {% else %}
+                <div class="no-results">
+                    <h3>No listings found</h3>
+                    <p>
+                        {% if location_filter %}
+                            No properties found in "{{ location_filter }}". Try searching in other locations or 
+                            <a href="{% url 'listings_marketplace' %}">view all listings</a>.
+                        {% else %}
+                            No properties are currently looking for co-hosts. Check back soon!
+                        {% endif %}
+                    </p>
+                    <br>
+                    <a href="{% url 'marketplace_home' %}" class="btn btn-filter">← Back to Home</a>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+
+<script>
+(function () {
+    const input = document.getElementById('location-input');
+    const box   = document.getElementById('suggestions');
+    const clearX = document.getElementById('clear-x');
+    let debounce, activeIdx = -1, items = [];
+
+    function closeSuggestions() { box.style.display = 'none'; activeIdx = -1; items = []; }
+    window.closeSuggestions = closeSuggestions;
+
+    window.clearSearch = function () {
+        input.value = '';
+        clearX.style.display = 'none';
+        closeSuggestions();
+        input.focus();
+    };
+
+    window.onSearchInput = function (val) {
+        clearX.style.display = val ? 'flex' : 'none';
+        clearTimeout(debounce);
+        if (val.trim().length < 2) { closeSuggestions(); return; }
+        debounce = setTimeout(() => fetchSuggestions(val.trim()), 380);
+    };
+
+    window.onSearchKeydown = function (e) {
+        if (!items.length) return;
+        if (e.key === 'ArrowDown')  { e.preventDefault(); setActive(Math.min(activeIdx + 1, items.length - 1)); }
+        if (e.key === 'ArrowUp')    { e.preventDefault(); setActive(Math.max(activeIdx - 1, 0)); }
+        if (e.key === 'Enter' && activeIdx >= 0) { e.preventDefault(); selectItem(items[activeIdx]); }
+        if (e.key === 'Escape') closeSuggestions();
+    };
+
+    function setActive(idx) {
+        activeIdx = idx;
+        Array.from(box.querySelectorAll('.sug-item')).forEach((el, i) => {
+            el.style.background = i === idx ? '#fff5f6' : '';
+        });
+    }
+
+    window.selectItem = function selectItem(item) {
+        input.value = item.display_name_short;
+        clearX.style.display = 'flex';
+        closeSuggestions();
+    }
+
+    async function fetchSuggestions(query) {
+        box.innerHTML = '<div class="sug-loading"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF385C" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="10"><animateTransform attributeName="transform" type="rotate" dur=".8s" from="0 12 12" to="360 12 12" repeatCount="indefinite"/></circle></svg> Finding places…</div>';
+        box.style.display = 'block';
+        try {
+            const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=6&featuretype=city,state,country`;
+            const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+            const data = await res.json();
+            items = data.map(r => {
+                const a = r.address || {};
+                const city    = a.city || a.town || a.village || a.county || '';
+                const state   = a.state || '';
+                const country = a.country || '';
+                const parts   = [city, state, country].filter(Boolean);
+                return {
+                    display_name_short: parts.slice(0, 2).join(', ') || r.display_name.split(',')[0],
+                    display_name_full: parts.join(', ') || r.display_name,
+                    type: r.type || r.class,
+                };
+            }).filter((v, i, a) => a.findIndex(x => x.display_name_short === v.display_name_short) === i);
+
+            if (!items.length) { box.innerHTML = '<div class="sug-loading">No places found</div>'; return; }
+
+            const icons = { city:'🏙️', town:'🏘️', village:'🌄', administrative:'📍', country:'🌍', state:'🗺️' };
+            box.innerHTML = items.map((item, i) => `
+                <div class="sug-item" data-idx="${i}" onclick="selectItem(window.__sugItems[${i}])">
+                    <div class="sug-icon">${icons[item.type] || '📍'}</div>
+                    <div>
+                        <div class="sug-main">${item.display_name_short}</div>
+                        <div class="sug-sub">${item.display_name_full}</div>
+                    </div>
+                </div>`).join('');
+            window.__sugItems = items;
+            activeIdx = -1;
+        } catch (err) {
+            box.innerHTML = '<div class="sug-loading">Could not load suggestions</div>';
+        }
+    }
+
+    document.addEventListener('click', e => {
+        if (!box.contains(e.target) && e.target !== input) closeSuggestions();
+    });
+})();
+</script>
+</body>
+</html>

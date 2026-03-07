@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ listing.title }} - Co-Host Marketplace</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            color: #333;
+        }
+        .header {
+            background: linear-gradient(135deg, #FF385C, #E31C3D);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: background 0.3s;
+        }
+        .nav-links a:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        .btn-primary {
+            background: white !important;
+            color: #FF385C !important;
+            font-weight: bold;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        .listing-detail {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .listing-image {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+        }
+        .listing-content {
+            padding: 30px;
+        }
+        .listing-title {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .listing-location {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .listing-status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .status-looking {
+            background: #e8f5e8;
+            color: #2d5e2d;
+        }
+        .status-reviewing {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .listing-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .detail-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .detail-item strong {
+            display: block;
+            font-size: 1.2rem;
+            color: #FF385C;
+        }
+        .listing-description {
+            margin-bottom: 30px;
+        }
+        .listing-description h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .listing-description p {
+            line-height: 1.6;
+            color: #666;
+        }
+        .host-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .host-info h3 {
+            margin-bottom: 15px;
+        }
+        .proposal-section {
+            background: #f0f8ff;
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid #FF385C;
+        }
+        .proposal-section h3 {
+            margin-bottom: 20px;
+            color: #FF385C;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #FF385C;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        .btn-submit {
+            background: #FF385C;
+            color: white;
+        }
+        .btn-submit:hover {
+            background: #E31C3D;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            margin-right: 10px;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .existing-proposal {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #ffeaa7;
+        }
+
+        /* Task Tagging Styles */
+        .task-input-container {
+            position: relative;
+        }
+        .task-input-wrapper {
+            position: relative;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 8px;
+            min-height: 50px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            background: white;
+            cursor: text;
+            transition: border-color 0.3s;
+        }
+        .task-input-wrapper:focus-within {
+            border-color: #FF385C;
+        }
+        .task-input-wrapper input {
+            border: none;
+            outline: none;
+            flex: 1;
+            min-width: 150px;
+            padding: 4px;
+            font-size: 16px;
+            background: transparent;
+        }
+        .task-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+        .task-suggestion {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
+        }
+        .task-suggestion:last-child {
+            border-bottom: none;
+        }
+        .task-suggestion:hover {
+            background: #f8f9fa;
+        }
+        .task-suggestion.new-task {
+            background: #f0f8ff;
+            border-left: 3px solid #FF385C;
+        }
+        .task-suggestion.new-task:hover {
+            background: #e6f3ff;
+        }
+        .task-tag {
+            background: #FF385C;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+            flex-shrink: 0;
+        }
+        .task-tag:hover {
+            background: #E31C3D;
+        }
+        .task-tag .remove-task {
+            background: rgba(255,255,255,0.3);
+            border: none;
+            color: white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            font-size: 11px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        .task-tag .remove-task:hover {
+            background: rgba(255,255,255,0.5);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s ease;
+        }
+        .modal.show {
+            display: block;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s ease;
+        }
+        .modal-header {
+            padding: 25px 30px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            border-radius: 15px 15px 0 0;
+            color: white;
+        }
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .modal-body {
+            padding: 30px;
+            text-align: center;
+        }
+        .modal-body p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #333;
+            margin-bottom: 25px;
+        }
+        .modal-footer {
+            padding: 0 30px 30px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        .modal-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 120px;
+        }
+        .modal-btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .modal-btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+        }
+        .modal-btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .modal-btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+        }
+        .close {
+            color: rgba(255,255,255,0.8);
+            float: right;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        .close:hover {
+            color: white;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    {% include 'hello/_nav.html' %}
+
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-success">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="listing-detail">
+            {% if listing.get_main_photo_url %}
+                <img src="{{ listing.get_main_photo_url }}" alt="{{ listing.title }}" class="listing-image">
+            {% endif %}
+
+            <div class="listing-content">
+                <h1 class="listing-title">{{ listing.title }}</h1>
+                <p class="listing-location">📍 {{ listing.location }}</p>
+
+                <span class="listing-status status-{{ listing.status }}">
+                    {{ listing.get_status_display }}
+                </span>
+
+                <div class="listing-details">
+                    {% if listing.property_type %}
+                        <div class="detail-item">
+                            <strong>{{ listing.property_type }}</strong>
+                            Property Type
+                        </div>
+                    {% endif %}
+                    {% if listing.guests_capacity %}
+                        <div class="detail-item">
+                            <strong>{{ listing.guests_capacity }}</strong>
+                            Guests
+                        </div>
+                    {% endif %}
+                    {% if listing.bedrooms %}
+                        <div class="detail-item">
+                            <strong>{{ listing.bedrooms }}</strong>
+                            Bedrooms
+                        </div>
+                    {% endif %}
+                    {% if listing.bathrooms %}
+                        <div class="detail-item">
+                            <strong>{{ listing.bathrooms }}</strong>
+                            Bathrooms
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if listing.description %}
+                    <div class="listing-description">
+                        <h3>About this opportunity</h3>
+                        <p>{{ listing.description|linebreaks }}</p>
+                    </div>
+                {% endif %}
+
+                {% if listing.co_host_requirements %}
+                    <div class="listing-description">
+                        <h3>What we're looking for</h3>
+                        <p>{{ listing.co_host_requirements|linebreaks }}</p>
+                    </div>
+                {% endif %}
+
+                {% with needed=listing.tasks_needed.all %}
+                {% if needed %}
+                    <div class="listing-description" style="margin-bottom:24px;">
+                        <h3 style="margin-bottom:12px;">🛠️ Tasks needed</h3>
+                        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                            {% for task in needed %}
+                                <span style="background:#f0faf4;color:#1a7a40;border:1px solid #b6e8ca;border-radius:20px;padding:5px 14px;font-size:.83rem;font-weight:600;">{{ task.name }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                {% endwith %}
+
+                <div class="host-info">
+                    <h3>Host: {{ listing.host.user_profile.user.get_full_name|default:listing.host.user_profile.user.username }}</h3>
+                    {% if listing.host.bio %}
+                        <p>{{ listing.host.bio }}</p>
+                    {% endif %}
+                    <p><strong>Total Listings:</strong> {{ listing.host.total_listings }}</p>
+                </div>
+
+                <p><a href="{{ listing.airbnb_url }}" target="_blank" class="btn btn-secondary">View on Airbnb</a></p>
+            </div>
+        </div>
+
+        {% if user.is_authenticated %}
+            {% if existing_proposal %}
+                <div class="existing-proposal">
+                    <h3>Your Proposal</h3>
+                    <p><strong>Status:</strong> {{ existing_proposal.get_status_display }}</p>
+                    <p><strong>Message:</strong> {{ existing_proposal.message }}</p>
+
+                    {% if existing_proposal.tasks.exists %}
+                        <p><strong>Tasks:</strong></p>
+                        <div style="margin: 10px 0; display: flex; flex-wrap: wrap; gap: 8px;">
+                            {% for task in existing_proposal.tasks.all %}
+                                <span style="background: #FF385C; color: white; padding: 4px 8px; border-radius: 10px; font-size: 12px;">{{ task.name }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    {% if existing_proposal.offered_rate and existing_proposal.rate_type %}
+                        <p><strong>Offered Rate:</strong>
+                            {% if existing_proposal.rate_type == 'fixed' %}
+                                ${{ existing_proposal.offered_rate }}/day
+                            {% elif existing_proposal.rate_type == 'percentage' %}
+                                {{ existing_proposal.offered_rate }}% of revenue
+                            {% endif %}
+                        </p>
+                    {% elif existing_proposal.offered_rate %}
+                        <p><strong>Offered Rate:</strong> ${{ existing_proposal.offered_rate }}/day</p>
+                    {% endif %}
+                    <p><em>Submitted on {{ existing_proposal.created_at|date:"M d, Y" }}</em></p>
+
+                    {% if existing_proposal.status == 'pending' %}
+                        <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                            <a href="{% url 'conversation' existing_proposal.id %}" class="btn" style="background:#FF385C;color:white;">💬 Message Host</a>
+                            <a href="{% url 'edit_proposal' existing_proposal.id %}" class="btn btn-secondary">Edit Proposal</a>
+                            <button type="button" class="btn" style="background: #dc3545; color: white;" onclick="showWithdrawModal({{ existing_proposal.id }})">Withdraw Proposal</button>
+                        </div>
+
+                        <!-- Hidden form for withdrawal -->
+                        <form id="withdrawForm" method="post" action="{% url 'withdraw_proposal' existing_proposal.id %}" style="display: none;">
+                            {% csrf_token %}
+                        </form>
+                    {% elif existing_proposal.status == 'accepted' %}
+                        <div style="margin-top: 20px;">
+                            <a href="{% url 'conversation' existing_proposal.id %}" class="btn" style="background:#FF385C;color:white;">💬 Message Host</a>
+                        </div>
+                    {% elif existing_proposal.status == 'withdrawn' %}
+                        <div style="margin-top: 20px;">
+                            <span style="color: #dc3545; font-style: italic;">This proposal was withdrawn</span>
+                        </div>
+                    {% endif %}
+                </div>
+            {% elif can_propose %}
+                <div class="proposal-section">
+                    <h3>Submit Your Proposal</h3>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="id_message">{{ form.message.label }}</label>
+                            {{ form.message }}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tasks_input">Tasks You Can Provide</label>
+
+                            {% if cohost_profile_tasks %}
+                            <div style="background:#f8f9fa;border-radius:10px;padding:14px 16px;margin-bottom:12px;border:1px solid #e8e8e8;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                                    <span style="font-size:0.82rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.5px;">From your profile</span>
+                                    <button type="button" id="select-all-profile-tasks"
+                                            style="font-size:0.82rem;color:#FF385C;background:none;border:1px solid #FF385C;border-radius:20px;padding:3px 12px;cursor:pointer;font-weight:600;transition:all .2s;">
+                                        Select all
+                                    </button>
+                                </div>
+                                <div style="display:flex;flex-wrap:wrap;gap:7px;">
+                                    {% for task in cohost_profile_tasks %}
+                                    <button type="button" class="profile-task-chip"
+                                            data-task-id="{{ task.id }}"
+                                            data-task-name="{{ task.name }}"
+                                            style="background:white;color:#333;border:1.5px solid #ddd;border-radius:20px;padding:5px 13px;font-size:0.83rem;cursor:pointer;transition:all .2s;font-weight:500;">
+                                        + {{ task.name }}
+                                    </button>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <div class="task-input-container">
+                                <div class="task-input-wrapper" id="task_input_wrapper">
+                                    <div id="selected_tasks" class="selected-tasks-inline"></div>
+                                    <input type="text" id="tasks_input" placeholder="Click to see all tasks or start typing to search..." autocomplete="off">
+                                </div>
+                                <div id="task_suggestions" class="task-suggestions"></div>
+                            </div>
+                            {{ form.tasks }}
+                            <small class="form-text text-muted">Start typing to see suggestions or create new tasks. Click on suggestions to add them as tags.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="id_rate_type">{{ form.rate_type.label }}</label>
+                            {{ form.rate_type }}
+                        </div>
+                        <div class="form-group" id="rate_input_group" style="display: none;">
+                            <label for="id_offered_rate">
+                                <span id="rate_label_text">Your Rate</span>
+                                <span id="rate_unit_text"></span>
+                            </label>
+                            {{ form.offered_rate }}
+                            <small id="rate_help_text" class="form-text text-muted"></small>
+                        </div>
+                        <button type="submit" class="btn btn-submit">Send Proposal</button>
+                    </form>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <strong>Info:</strong>
+                    {% if user.userprofile.role != 'cohost' %}
+                        You need a co-host account to submit proposals.
+                    {% else %}
+                        This listing is not currently accepting new proposals.
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="alert alert-info">
+                <strong>Interested?</strong> <a href="{% url 'login' %}">Login</a> or <a href="{% url 'register' %}">create a co-host account</a> to submit a proposal.
+            </div>
+        {% endif %}
+
+        <a href="{% url 'listings_marketplace' %}" class="btn btn-secondary">← Back to Listings</a>
+    </div>
+
+    <!-- Withdrawal Confirmation Modal -->
+    <div id="withdrawModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    ⚠️ Withdraw Proposal
+                    <span class="close" onclick="closeWithdrawModal()">&times;</span>
+                </h3>
+            </div>
+            <div class="modal-body">
+                <p><strong>Are you sure you want to withdraw this proposal?</strong></p>
+                <p>This action cannot be undone and you'll need to submit a new proposal if you change your mind.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="modal-btn modal-btn-secondary" onclick="closeWithdrawModal()">Cancel</button>
+                <button type="button" class="modal-btn modal-btn-danger" onclick="confirmWithdrawal()">Yes, Withdraw</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Rate Type functionality
+            const rateTypeSelect = document.getElementById('rate_type_select');
+            const rateInputGroup = document.getElementById('rate_input_group');
+            const rateInput = document.getElementById('rate_input');
+            const rateLabelText = document.getElementById('rate_label_text');
+            const rateUnitText = document.getElementById('rate_unit_text');
+            const rateHelpText = document.getElementById('rate_help_text');
+
+            function updateRateInput() {
+                const selectedType = rateTypeSelect.value;
+
+                if (selectedType === '') {
+                    rateInputGroup.style.display = 'none';
+                    rateInput.value = '';
+                } else {
+                    rateInputGroup.style.display = 'block';
+
+                    if (selectedType === 'fixed') {
+                        rateLabelText.textContent = 'Fixed Rate';
+                        rateUnitText.textContent = '($/day)';
+                        rateInput.placeholder = 'e.g., 150.00';
+                        rateInput.step = '0.01';
+                        rateInput.min = '0';
+                        rateInput.max = '9999.99';
+                        rateHelpText.textContent = 'Enter your daily rate in dollars';
+                    } else if (selectedType === 'percentage') {
+                        rateLabelText.textContent = 'Revenue Share';
+                        rateUnitText.textContent = '(% of revenue)';
+                        rateInput.placeholder = 'e.g., 15';
+                        rateInput.step = '0.1';
+                        rateInput.min = '0';
+                        rateInput.max = '100';
+                        rateHelpText.textContent = 'Enter percentage of revenue (0-100%)';
+                    }
+                }
+            }
+
+            rateTypeSelect.addEventListener('change', updateRateInput);
+            updateRateInput();
+
+            // Task Tagging functionality
+            const tasksInput = document.getElementById('tasks_input');
+            const taskSuggestions = document.getElementById('task_suggestions');
+            const selectedTasksContainer = document.getElementById('selected_tasks');
+            const tasksHidden = document.getElementById('tasks_hidden');
+            const taskInputWrapper = document.getElementById('task_input_wrapper');
+
+            let selectedTasks = [];
+            let currentTimeout;
+
+            function updateHiddenInput() {
+                tasksHidden.value = JSON.stringify(selectedTasks);
+            }
+
+            function addTask(taskName, taskId = null) {
+                // Check if task already selected
+                if (selectedTasks.some(task => task.name === taskName)) {
+                    return;
+                }
+
+                const task = { name: taskName, id: taskId };
+                selectedTasks.push(task);
+
+                renderSelectedTasks();
+                updateHiddenInput();
+                tasksInput.value = '';
+
+                // Refresh dropdown if it's currently showing
+                if (taskSuggestions.style.display === 'block') {
+                    const currentQuery = tasksInput.value.trim();
+                    fetchSuggestions(currentQuery);
+                } else {
+                    hideSuggestions();
+                }
+            }
+
+            function removeTask(taskName) {
+                selectedTasks = selectedTasks.filter(task => task.name !== taskName);
+                renderSelectedTasks();
+                updateHiddenInput();
+
+                // Re-enable matching profile chip
+                document.querySelectorAll('.profile-task-chip').forEach(chip => {
+                    if (chip.dataset.taskName === taskName) {
+                        chip.style.opacity = '';
+                        chip.style.pointerEvents = '';
+                        chip.style.background = 'white';
+                        chip.style.color = '#333';
+                        chip.style.borderColor = '#ddd';
+                        chip.textContent = '+ ' + taskName;
+                    }
+                });
+
+                // Refresh dropdown if it's currently showing
+                if (taskSuggestions.style.display === 'block') {
+                    fetchSuggestions(tasksInput.value.trim());
+                }
+            }
+
+            function renderSelectedTasks() {
+                selectedTasksContainer.innerHTML = '';
+                selectedTasks.forEach(task => {
+                    const taskTag = document.createElement('div');
+                    taskTag.className = 'task-tag';
+                    taskTag.innerHTML = `
+                        <span>${task.name}</span>
+                        <button type="button" class="remove-task" onclick="removeTaskHandler('${task.name}')">×</button>
+                    `;
+                    selectedTasksContainer.appendChild(taskTag);
+                });
+
+                // Update placeholder based on whether there are selected tasks
+                if (selectedTasks.length > 0) {
+                    tasksInput.placeholder = 'Add more tasks...';
+                } else {
+                    tasksInput.placeholder = 'Click to see all tasks or start typing to search...';
+                }
+            }
+
+            function showSuggestions(suggestions, showingAllTasks = false) {
+                if (suggestions.length === 0) {
+                    hideSuggestions();
+                    return;
+                }
+
+                // Filter out already selected tasks
+                const availableSuggestions = suggestions.filter(task =>
+                    !selectedTasks.some(selectedTask => selectedTask.name === task.name)
+                );
+
+                if (availableSuggestions.length === 0) {
+                    hideSuggestions();
+                    return;
+                }
+
+                taskSuggestions.innerHTML = '';
+
+                // Add header when showing all tasks
+                if (showingAllTasks) {
+                    const headerDiv = document.createElement('div');
+                    headerDiv.style.cssText = 'padding: 8px 15px; background: #f8f9fa; border-bottom: 1px solid #e0e0e0; font-size: 12px; color: #666; font-weight: bold;';
+                    headerDiv.textContent = `Available Tasks (${availableSuggestions.length} remaining)`;
+                    taskSuggestions.appendChild(headerDiv);
+                }
+
+                availableSuggestions.forEach(task => {
+                    const suggestionDiv = document.createElement('div');
+                    suggestionDiv.className = `task-suggestion ${task.exists ? '' : 'new-task'}`;
+                    suggestionDiv.innerHTML = `
+                        <div>
+                            <strong>${task.name}</strong>
+                            ${task.exists ? '' : '<small style="display: block; color: #666;">Create new task</small>'}
+                        </div>
+                    `;
+                    suggestionDiv.addEventListener('click', () => {
+                        addTask(task.name, task.id);
+                    });
+                    taskSuggestions.appendChild(suggestionDiv);
+                });
+
+                taskSuggestions.style.display = 'block';
+            }
+
+            function hideSuggestions() {
+                taskSuggestions.style.display = 'none';
+            }
+
+            function fetchSuggestions(query) {
+                fetch(`/api/tasks/autocomplete/?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        showSuggestions(data.tasks, query.length === 0);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching suggestions:', error);
+                        hideSuggestions();
+                    });
+            }
+
+            function fetchAllTasks() {
+                // Fetch all tasks when input is focused
+                fetchSuggestions('');
+            }
+
+            // Event listeners for task input
+            taskInputWrapper.addEventListener('click', function(e) {
+                // Focus input when wrapper is clicked (but not when clicking tags)
+                if (e.target === this || e.target === selectedTasksContainer) {
+                    tasksInput.focus();
+                }
+            });
+
+            tasksInput.addEventListener('focus', function() {
+                // Show all tasks when input is focused
+                if (this.value.trim() === '') {
+                    fetchAllTasks();
+                }
+            });
+
+            tasksInput.addEventListener('input', function() {
+                clearTimeout(currentTimeout);
+                currentTimeout = setTimeout(() => {
+                    fetchSuggestions(this.value.trim());
+                }, 300);
+            });
+
+            tasksInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const query = this.value.trim();
+                    if (query) {
+                        addTask(query);
+                    }
+                }
+            });
+
+            // Hide suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.task-input-container')) {
+                    hideSuggestions();
+                }
+            });
+
+            // Global function for removing tasks (called from template)
+            window.removeTaskHandler = function(taskName) {
+                removeTask(taskName);
+            };
+
+            // ── Profile capability chips ──────────────────────────────────────
+            function activateChip(chip) {
+                const taskId   = chip.dataset.taskId   ? parseInt(chip.dataset.taskId) : null;
+                const taskName = chip.dataset.taskName;
+                addTask(taskName, taskId);
+                chip.style.opacity      = '0.45';
+                chip.style.pointerEvents = 'none';
+                chip.style.background   = '#28a745';
+                chip.style.color        = 'white';
+                chip.style.borderColor  = '#28a745';
+                chip.textContent        = '✓ ' + taskName;
+            }
+
+            document.querySelectorAll('.profile-task-chip').forEach(chip => {
+                chip.addEventListener('click', function () { activateChip(this); });
+            });
+
+            const selectAllBtn = document.getElementById('select-all-profile-tasks');
+            if (selectAllBtn) {
+                selectAllBtn.addEventListener('click', () => {
+                    document.querySelectorAll('.profile-task-chip').forEach(chip => {
+                        if (chip.style.opacity !== '0.45') activateChip(chip);
+                    });
+                });
+            }
+            // ─────────────────────────────────────────────────────────────────
+
+            // Modal functionality
+            const withdrawModal = document.getElementById('withdrawModal');
+
+            window.showWithdrawModal = function(proposalId) {
+                withdrawModal.classList.add('show');
+                // Store proposal ID for later use
+                window.currentProposalId = proposalId;
+            };
+
+            window.closeWithdrawModal = function() {
+                withdrawModal.classList.remove('show');
+            };
+
+            window.confirmWithdrawal = function() {
+                // Submit the withdrawal form
+                const withdrawForm = document.getElementById('withdrawForm');
+                withdrawForm.submit();
+            };
+
+            // Close modal when clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target === withdrawModal) {
+                    closeWithdrawModal();
+                }
+            });
+
+            // Close modal with Escape key
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && withdrawModal.classList.contains('show')) {
+                    closeWithdrawModal();
+                }
+            });
+
+        });
+    </script>
+</body>
+</html>

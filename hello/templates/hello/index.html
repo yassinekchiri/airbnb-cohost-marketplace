@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Airbnb Scraper with Selenium</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        .form-section {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn-primary {
+            background-color: #FF385C;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #E31C3D;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        .results-section {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .listing-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin: 15px 0;
+            overflow: hidden;
+            transition: transform 0.2s;
+            display: flex;
+            background: white;
+        }
+        .listing-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        .listing-image {
+            width: 250px;
+            height: 180px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+        .listing-image-placeholder {
+            width: 250px;
+            height: 180px;
+            background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .listing-content {
+            padding: 20px;
+            flex: 1;
+        }
+        .listing-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .listing-location {
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .listing-price {
+            font-size: 16px;
+            font-weight: bold;
+            color: #FF385C;
+            margin-bottom: 8px;
+        }
+        .listing-rating {
+            color: #008A05;
+            margin-bottom: 10px;
+        }
+        .listing-link {
+            color: #0066cc;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .listing-link:hover {
+            text-decoration: underline;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #f5c6cb;
+            margin: 20px 0;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #c3e6cb;
+            margin: 20px 0;
+        }
+        .recent-listings {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .listing-card {
+                flex-direction: column;
+            }
+            .listing-image, .listing-image-placeholder {
+                width: 100%;
+                height: 200px;
+            }
+            .listing-content {
+                padding: 15px;
+            }
+            .button-group {
+                flex-direction: column;
+            }
+            button {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏠 Airbnb Listing Scraper</h1>
+        <p>Extract detailed information from any Airbnb listing including host profiles</p>
+    </div>
+
+    <div class="form-section">
+        <h2>🔍 Airbnb Listing Scraper</h2>
+        <p>Enter any Airbnb listing URL to extract comprehensive details including host information, co-host details, property specifics, and photos.</p>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="listing_url">Airbnb Listing URL:</label>
+                <input type="url" id="listing_url" name="listing_url" placeholder="https://www.airbnb.com/rooms/12345678" value="{{ request.POST.listing_url }}" style="width: 100%;">
+                <small style="color: #666; font-size: 12px;">Paste the full URL of any Airbnb listing (e.g., from airbnb.com/rooms/...)</small>
+            </div>
+            <div class="button-group">
+                <button type="submit" name="action" value="scrape_single" class="btn-primary">🔍 Extract Listing Details</button>
+            </div>
+        </form>
+    </div>
+
+    {% if error %}
+        <div class="error">
+            <strong>Error:</strong> {{ error }}
+        </div>
+    {% endif %}
+
+    {% if scrape_performed %}
+        <div class="results-section">
+            <h2>🏠 Detailed Listing Information</h2>
+            
+            {% if detailed_listing %}
+                <div class="success">
+                    ✅ Successfully scraped detailed listing information!
+                </div>
+                
+                <div class="listing-card" style="background: #f8f9fa; border: 2px solid #FF385C;">
+                    {% if detailed_listing.get_main_photo_url %}
+                        <img src="{{ detailed_listing.get_main_photo_url }}" alt="{{ detailed_listing.title }}" class="listing-image" 
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="listing-image-placeholder" style="display: none;">
+                            🏠<br>No Image
+                        </div>
+                    {% else %}
+                        <div class="listing-image-placeholder">
+                            🏠<br>No Image
+                        </div>
+                    {% endif %}
+                    
+                    <div class="listing-content">
+                        <div class="listing-title" style="color: #FF385C; font-size: 20px;">{{ detailed_listing.title }}</div>
+                        
+                        {% if detailed_listing.property_type %}
+                        <div style="margin: 10px 0; color: #666;">🏡 {{ detailed_listing.property_type }}</div>
+                        {% endif %}
+                        
+                        {% if detailed_listing.location %}
+                        <div style="margin: 10px 0; color: #666;">📍 {{ detailed_listing.location }}</div>
+                        {% endif %}
+                        
+                        {% if detailed_listing.guests_capacity or detailed_listing.bedrooms or detailed_listing.bathrooms %}
+                        <div style="margin: 10px 0; color: #666;">
+                            🏠 
+                            {% if detailed_listing.guests_capacity %}{{ detailed_listing.guests_capacity }}{% endif %}
+                            {% if detailed_listing.bedrooms %} • {{ detailed_listing.bedrooms }}{% endif %}
+                            {% if detailed_listing.bathrooms %} • {{ detailed_listing.bathrooms }}{% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Host Information (Compact) -->
+                        {% if detailed_listing.host_name %}
+                        <div style="margin: 15px 0; padding: 15px; background: linear-gradient(135deg, #FF385C, #E31C3D); color: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(255,56,92,0.2);">
+                            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 12px;">
+                                {% if detailed_listing.host_photo_url %}
+                                <img src="{{ detailed_listing.host_photo_url }}" alt="{{ detailed_listing.host_name }}" 
+                                     style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid white;" 
+                                     onerror="this.style.display='none';">
+                                {% endif %}
+                                
+                                <div style="flex: 1;">
+                                    <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+                                        <h4 style="margin: 0; color: white; font-size: 18px;">👤 {{ detailed_listing.host_name }}</h4>
+                                        {% if detailed_listing.host_id %}
+                                        <span style="font-size: 11px; color: rgba(255,255,255,0.7); font-family: monospace;">ID: {{ detailed_listing.host_id }}</span>
+                                        {% endif %}
+                                        {% if detailed_listing.host_superhost %}
+                                        <span style="background: rgba(255,255,255,0.2); color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px;">⭐ Superhost</span>
+                                        {% endif %}
+                                        {% if detailed_listing.host_verified %}
+                                        <span style="background: rgba(255,255,255,0.2); color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px;">✓ Verified</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if detailed_listing.host_location %}
+                                    <p style="margin: 5px 0 0 0; color: rgba(255,255,255,0.8); font-size: 12px;">📍 {{ detailed_listing.host_location }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; font-size: 11px;">
+                                {% if detailed_listing.host_years_hosting %}
+                                <div style="background: rgba(255,255,255,0.1); padding: 6px; border-radius: 4px; text-align: center;">
+                                    <div style="font-weight: bold;">{{ detailed_listing.host_years_hosting }}</div>
+                                    <div style="color: rgba(255,255,255,0.7);">hosting</div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if detailed_listing.host_reviews_count %}
+                                <div style="background: rgba(255,255,255,0.1); padding: 6px; border-radius: 4px; text-align: center;">
+                                    <div style="font-weight: bold;">{{ detailed_listing.host_reviews_count }}</div>
+                                    <div style="color: rgba(255,255,255,0.7);">reviews</div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if detailed_listing.host_response_rate %}
+                                <div style="background: rgba(255,255,255,0.1); padding: 6px; border-radius: 4px; text-align: center;">
+                                    <div style="font-weight: bold;">{{ detailed_listing.host_response_rate }}</div>
+                                    <div style="color: rgba(255,255,255,0.7);">response</div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if detailed_listing.host_response_time %}
+                                <div style="background: rgba(255,255,255,0.1); padding: 6px; border-radius: 4px; text-align: center;">
+                                    <div style="font-weight: bold;">{{ detailed_listing.host_response_time }}</div>
+                                    <div style="color: rgba(255,255,255,0.7);">time</div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            {% if detailed_listing.host_profile_url %}
+                            <div style="margin-top: 10px;">
+                                <a href="{{ detailed_listing.host_profile_url }}" target="_blank" 
+                                   style="display: inline-block; background: rgba(255,255,255,0.2); color: white; padding: 6px 12px; border-radius: 15px; text-decoration: none; font-size: 12px; border: 1px solid rgba(255,255,255,0.3);">
+                                    🔗 View Host Profile
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <!-- Host not found - show debug message -->
+                        <div style="margin: 20px 0; padding: 20px; background: #f39c12; color: white; border-radius: 12px;">
+                            <h4 style="margin: 0 0 10px 0;">⚠️ Host Information Not Detected</h4>
+                            <p style="margin: 0; font-size: 14px;">
+                                The host information could not be extracted from this listing. This might happen if:
+                                <br>• The page is still loading (try refreshing after a moment)
+                                <br>• The listing has a different layout than expected
+                                <br>• The host section is not publicly visible
+                            </p>
+                        </div>
+                        {% endif %}
+                        
+                        
+                        <a href="{{ detailed_listing.listing_url }}" target="_blank" class="listing-link" style="margin-top: 15px; display: inline-block;">🔗 View Original Listing</a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="error">
+                    No detailed listing information found. Please check the URL and try again.
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+
+
+
+
+    <div style="text-align: center; margin-top: 40px; color: #666; font-size: 14px;">
+        <p>🤖 Powered by Selenium WebDriver | 🏠 Airbnb Data Scraper</p>
+    </div>
+</body>
+</html>
