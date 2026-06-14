@@ -186,6 +186,22 @@ class MessageForm(forms.Form):
     )
 
 
+class ReviewForm(forms.Form):
+    RATING_CHOICES = [
+        (5, '5 stars'),
+        (4, '4 stars'),
+        (3, '3 stars'),
+        (2, '2 stars'),
+        (1, '1 star'),
+    ]
+    rating = forms.ChoiceField(choices=RATING_CHOICES, widget=forms.RadioSelect, label="Rating")
+    comment = forms.CharField(
+        max_length=1000, required=False,
+        widget=forms.Textarea(attrs={'rows': 4, 'placeholder': 'Share your experience working together...'}),
+        label="Review"
+    )
+
+
 class UserInfoForm(forms.Form):
     first_name = forms.CharField(
         max_length=30,

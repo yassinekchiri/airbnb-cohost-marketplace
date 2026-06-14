@@ -14,7 +14,10 @@
       "Bash(apt update -qq)",
       "Bash(apt install gh -y -qq)",
       "Bash(dnf:*)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(gh repo:*)",
+      "Bash(gh api:*)",
+      "Bash(do echo:*)"
     ],
     "deny": [],
     "ask": []

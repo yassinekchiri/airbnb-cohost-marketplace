@@ -1,369 +1,259 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Edit Listing — {{ listing.title|truncatechars:40 }}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; color: #333; }
+{% extends 'hello/base.html' %}
 
-        .header { background: linear-gradient(135deg, #FF385C, #E31C3D); color: white; padding: 1rem 0; box-shadow: 0 2px 10px rgba(0,0,0,.1); }
-        .nav { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
-        .logo { font-size: 24px; font-weight: bold; text-decoration: none; color: white; }
-        .nav-links { display: flex; gap: 16px; align-items: center; }
-        .nav-links a { color: white; text-decoration: none; padding: 8px 14px; border-radius: 20px; transition: background .3s; font-size: .92rem; }
-        .nav-links a:hover { background: rgba(255,255,255,.2); }
+{% block title %}Edit Listing — {{ listing.title|truncatechars:40 }}{% endblock %}
 
-        /* Page hero */
-        .page-hero { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); padding: 36px 20px; color: white; text-align: center; }
-        .page-hero h1 { font-size: 1.7rem; font-weight: 800; margin-bottom: 6px; }
-        .page-hero p { color: rgba(255,255,255,.65); font-size: .95rem; }
+{% block extra_css %}
+<style>
+/* Form elements */
+.form-input, .form-textarea, .form-select {
+    width: 100%; padding: 11px 14px; border: 1.5px solid var(--clr-border); border-radius: 10px;
+    font-size: .93rem; font-family: var(--font-body); background: hsl(var(--muted)); color: var(--clr-fg);
+    transition: border .2s, background .2s; outline: none;
+}
+.form-input:focus, .form-textarea:focus, .form-select:focus { border-color: var(--clr-primary); background: white; }
+.form-textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
+.form-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 
-        /* Layout */
-        .container { max-width: 860px; margin: 0 auto; padding: 32px 20px 60px; }
+/* Photo section */
+.photo-preview-wrap { position: relative; display: inline-block; }
+.photo-preview { width: 100%; max-width: 340px; height: 200px; border-radius: 12px; object-fit: cover; border: 2px solid var(--clr-border); display: block; }
+.photo-placeholder { width: 340px; height: 200px; border-radius: 12px; background: hsl(var(--muted)); display: flex; align-items: center; justify-content: center; font-size: 3rem; border: 2px dashed var(--clr-border); }
+.photo-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.photo-upload-btn { background: hsl(var(--muted)); color: var(--clr-fg); border: 1.5px solid var(--clr-border); border-radius: 8px; padding: 9px 16px; font-size: .85rem; font-weight: 700; cursor: pointer; transition: all .2s; display: inline-flex; align-items: center; gap: 6px; }
+.photo-upload-btn:hover { border-color: var(--clr-primary); color: var(--clr-primary); }
+#photo-file-input { display: none; }
+.photo-url-row { display: flex; gap: 8px; margin-top: 10px; }
+.photo-url-row input { flex: 1; }
 
-        .card { background: white; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,.08); padding: 28px; margin-bottom: 24px; }
-        .card-title { font-size: 1.05rem; font-weight: 700; color: #222; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #f0f0f0; padding-bottom: 14px; }
+/* Sync button */
+.sync-btn { background: linear-gradient(135deg, #3b82f6, #6366f1); color: white; border: none; border-radius: 12px; padding: 12px 22px; font-size: .9rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: opacity .2s, transform .15s; margin-bottom: 4px; }
+.sync-btn:hover { opacity: .9; transform: translateY(-1px); }
+.sync-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.sync-status { font-size: .82rem; color: var(--clr-muted-fg); margin-top: 6px; min-height: 18px; }
 
-        /* Form elements */
-        .form-group { margin-bottom: 18px; }
-        .form-label { display: block; font-size: .82rem; font-weight: 700; color: #555; margin-bottom: 6px; letter-spacing: .3px; text-transform: uppercase; }
-        .form-input, .form-textarea, .form-select {
-            width: 100%; padding: 11px 14px; border: 1.5px solid #e0e3e8; border-radius: 10px;
-            font-size: .93rem; font-family: inherit; background: #fafafa; color: #333;
-            transition: border .2s, background .2s; outline: none;
-        }
-        .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: #FF385C; background: white; }
-        .form-textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
-        .form-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        .form-grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+/* Task tag UI */
+.tag-input-wrap { border: 1.5px solid var(--clr-border); border-radius: 10px; padding: 8px 10px; display: flex; flex-wrap: wrap; gap: 6px; background: hsl(var(--muted)); cursor: text; min-height: 46px; align-items: center; transition: border .2s; }
+.tag-input-wrap:focus-within { border-color: var(--clr-primary); background: white; }
+.tag-pill { background: #e8f4fd; color: #1565c0; border-radius: 20px; padding: 4px 12px; font-size: .8rem; font-weight: 700; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+.tag-pill .remove-tag { cursor: pointer; font-size: .75rem; color: var(--clr-muted-fg); line-height: 1; }
+.tag-pill .remove-tag:hover { color: var(--clr-primary); }
+.tag-input { border: none; outline: none; background: transparent; font-size: .9rem; font-family: var(--font-body); min-width: 140px; flex: 1; }
+.autocomplete-dropdown { position: absolute; background: white; border: 1.5px solid var(--clr-border); border-radius: 10px; box-shadow: var(--shadow-elevated); z-index: 200; min-width: 240px; max-width: 360px; overflow: hidden; margin-top: 4px; }
+.autocomplete-item { padding: 10px 16px; cursor: pointer; font-size: .88rem; display: flex; align-items: center; gap: 10px; }
+.autocomplete-item:hover, .autocomplete-item.active { background: hsl(var(--muted)); }
+.autocomplete-item .new-badge { background: #e8f5e9; color: #2e7d32; font-size: .7rem; font-weight: 800; padding: 2px 8px; border-radius: 10px; }
+.task-wrap { position: relative; }
 
-        /* Photo section */
-        .photo-preview-wrap { position: relative; display: inline-block; }
-        .photo-preview {
-            width: 100%; max-width: 340px; height: 200px; border-radius: 12px;
-            object-fit: cover; border: 2px solid #eee; display: block;
-        }
-        .photo-placeholder {
-            width: 340px; height: 200px; border-radius: 12px;
-            background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 3rem; border: 2px dashed #ddd;
-        }
-        .photo-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
-        .photo-upload-btn {
-            background: #f0f2f5; color: #444; border: 1.5px solid #ddd; border-radius: 8px;
-            padding: 9px 16px; font-size: .85rem; font-weight: 700; cursor: pointer;
-            transition: all .2s; display: inline-flex; align-items: center; gap: 6px;
-        }
-        .photo-upload-btn:hover { border-color: #FF385C; color: #FF385C; background: #fff5f7; }
-        #photo-file-input { display: none; }
-        .photo-url-row { display: flex; gap: 8px; margin-top: 10px; }
-        .photo-url-row input { flex: 1; }
+/* Modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .25s; }
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal-box { background: white; border-radius: 1.25rem; box-shadow: var(--shadow-elevated); width: 100%; max-width: 680px; max-height: 86vh; display: flex; flex-direction: column; overflow: hidden; transform: translateY(20px); transition: transform .25s; }
+.modal-overlay.open .modal-box { transform: translateY(0); }
+.modal-hero { background: var(--gradient-dark); padding: 22px 28px 18px; color: white; flex-shrink: 0; }
+.modal-hero h2 { font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; margin-bottom: 4px; }
+.modal-hero p { font-size: .82rem; color: rgba(255,255,255,.65); }
+.modal-body { padding: 20px 28px; overflow-y: auto; flex: 1; }
+.modal-footer { padding: 16px 28px; border-top: 1px solid var(--clr-border); display: flex; gap: 10px; justify-content: flex-end; flex-shrink: 0; }
 
-        /* Sync button */
-        .sync-btn {
-            background: linear-gradient(135deg, #3b82f6, #6366f1);
-            color: white; border: none; border-radius: 12px;
-            padding: 12px 22px; font-size: .9rem; font-weight: 700; cursor: pointer;
-            display: inline-flex; align-items: center; gap: 8px; transition: opacity .2s, transform .15s;
-            margin-bottom: 4px;
-        }
-        .sync-btn:hover { opacity: .9; transform: translateY(-1px); }
-        .sync-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
-        .sync-status { font-size: .82rem; color: #888; margin-top: 6px; min-height: 18px; }
+/* Diff table */
+.diff-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.diff-table th { text-align: left; padding: 8px 12px; background: hsl(var(--muted)); color: var(--clr-muted-fg); font-size: .75rem; text-transform: uppercase; letter-spacing: .4px; }
+.diff-table td { padding: 10px 12px; border-bottom: 1px solid var(--clr-border); vertical-align: top; }
+.diff-table tr:last-child td { border-bottom: none; }
+.diff-check { width: 36px; }
+.diff-check input[type=checkbox] { width: 17px; height: 17px; cursor: pointer; accent-color: var(--clr-primary); }
+.diff-field { font-weight: 700; color: var(--clr-fg); width: 110px; }
+.diff-old { color: hsl(0 75% 50%); text-decoration: line-through; word-break: break-word; }
+.diff-new { color: hsl(145 60% 35%); font-weight: 600; word-break: break-word; }
+.diff-arrow { color: var(--clr-border); width: 22px; text-align: center; }
+.no-changes-note { text-align: center; padding: 28px 0; color: var(--clr-muted-fg); font-size: .95rem; }
 
-        /* Task tag UI */
-        .tag-input-wrap {
-            border: 1.5px solid #e0e3e8; border-radius: 10px; padding: 8px 10px;
-            display: flex; flex-wrap: wrap; gap: 6px; background: #fafafa; cursor: text;
-            min-height: 46px; align-items: center; transition: border .2s;
-        }
-        .tag-input-wrap:focus-within { border-color: #FF385C; background: white; }
-        .tag-pill {
-            background: #e8f4fd; color: #1565c0; border-radius: 20px;
-            padding: 4px 12px; font-size: .8rem; font-weight: 700;
-            display: flex; align-items: center; gap: 5px; white-space: nowrap;
-        }
-        .tag-pill .remove-tag { cursor: pointer; font-size: .75rem; color: #888; line-height: 1; }
-        .tag-pill .remove-tag:hover { color: #FF385C; }
-        .tag-input {
-            border: none; outline: none; background: transparent;
-            font-size: .9rem; font-family: inherit; min-width: 140px; flex: 1;
-        }
-        .autocomplete-dropdown {
-            position: absolute; background: white; border: 1.5px solid #e0e3e8; border-radius: 10px;
-            box-shadow: 0 8px 30px rgba(0,0,0,.12); z-index: 200; min-width: 240px; max-width: 360px;
-            overflow: hidden; margin-top: 4px;
-        }
-        .autocomplete-item {
-            padding: 10px 16px; cursor: pointer; font-size: .88rem; display: flex; align-items: center; gap: 10px;
-        }
-        .autocomplete-item:hover, .autocomplete-item.active { background: #f8f9fa; }
-        .autocomplete-item .new-badge { background: #e8f5e9; color: #2e7d32; font-size: .7rem; font-weight: 800; padding: 2px 8px; border-radius: 10px; }
-        .task-wrap { position: relative; }
+.btn-modal-apply { background: var(--gradient-warm); color: white; border: none; border-radius: 10px; padding: 11px 24px; font-size: .9rem; font-weight: 700; cursor: pointer; }
+.btn-modal-discard { background: white; color: var(--clr-muted-fg); border: 1.5px solid var(--clr-border); border-radius: 10px; padding: 10px 20px; font-size: .9rem; font-weight: 600; cursor: pointer; transition: all .2s; }
+.btn-modal-discard:hover { border-color: var(--clr-muted-fg); color: var(--clr-fg); }
 
-        /* Form actions */
-        .form-actions { display: flex; gap: 12px; justify-content: flex-end; align-items: center; padding-top: 8px; }
-        .btn-primary {
-            background: #FF385C; color: white; border: none; border-radius: 12px;
-            padding: 13px 28px; font-size: .95rem; font-weight: 700; cursor: pointer;
-            transition: background .2s, transform .15s;
-        }
-        .btn-primary:hover { background: #E31C3D; transform: translateY(-1px); }
-        .btn-cancel {
-            background: white; color: #666; border: 1.5px solid #ddd; border-radius: 12px;
-            padding: 12px 24px; font-size: .9rem; font-weight: 600; cursor: pointer;
-            text-decoration: none; display: inline-block; text-align: center; transition: all .2s;
-        }
-        .btn-cancel:hover { border-color: #aaa; color: #333; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin .8s linear infinite; display: inline-block; }
 
-        /* ── Diff / Confirm modal ───────────────────────────────────────── */
-        .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,.55);
-            backdrop-filter: blur(4px); z-index: 1000;
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity .25s;
-        }
-        .modal-overlay.open { opacity: 1; pointer-events: all; }
-        .modal-box {
-            background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,.25);
-            width: 100%; max-width: 680px; max-height: 86vh; display: flex; flex-direction: column;
-            overflow: hidden; transform: translateY(20px); transition: transform .25s;
-        }
-        .modal-overlay.open .modal-box { transform: translateY(0); }
-        .modal-hero {
-            background: linear-gradient(135deg, #1e3a5f 0%, #0f3460 100%);
-            padding: 22px 28px 18px; color: white; flex-shrink: 0;
-        }
-        .modal-hero h2 { font-size: 1.2rem; font-weight: 800; margin-bottom: 4px; }
-        .modal-hero p { font-size: .82rem; color: rgba(255,255,255,.65); }
-        .modal-body { padding: 20px 28px; overflow-y: auto; flex: 1; }
-        .modal-footer { padding: 16px 28px; border-top: 1px solid #f0f0f0; display: flex; gap: 10px; justify-content: flex-end; flex-shrink: 0; }
+@media (max-width: 640px) {
+    .form-grid2, .form-grid4 { grid-template-columns: 1fr; }
+    .modal-box { margin: 12px; }
+}
+</style>
+{% endblock %}
 
-        /* Diff table */
-        .diff-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
-        .diff-table th { text-align: left; padding: 8px 12px; background: #f8f9fa; color: #888; font-size: .75rem; text-transform: uppercase; letter-spacing: .4px; }
-        .diff-table td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
-        .diff-table tr:last-child td { border-bottom: none; }
-        .diff-check { width: 36px; }
-        .diff-check input[type=checkbox] { width: 17px; height: 17px; cursor: pointer; accent-color: #FF385C; }
-        .diff-field { font-weight: 700; color: #444; width: 110px; }
-        .diff-old { color: #e53935; text-decoration: line-through; word-break: break-word; }
-        .diff-new { color: #2e7d32; font-weight: 600; word-break: break-word; }
-        .diff-arrow { color: #ccc; width: 22px; text-align: center; }
-        .no-changes-note { text-align: center; padding: 28px 0; color: #aaa; font-size: .95rem; }
-
-        .btn-modal-apply {
-            background: #FF385C; color: white; border: none; border-radius: 10px;
-            padding: 11px 24px; font-size: .9rem; font-weight: 700; cursor: pointer; transition: background .2s;
-        }
-        .btn-modal-apply:hover { background: #E31C3D; }
-        .btn-modal-discard {
-            background: white; color: #666; border: 1.5px solid #ddd; border-radius: 10px;
-            padding: 10px 20px; font-size: .9rem; font-weight: 600; cursor: pointer; transition: all .2s;
-        }
-        .btn-modal-discard:hover { border-color: #aaa; color: #333; }
-
-        /* Sync loading spinner */
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .spin { animation: spin .8s linear infinite; display: inline-block; }
-
-        @media (max-width: 640px) {
-            .form-grid2, .form-grid4 { grid-template-columns: 1fr; }
-            .modal-box { margin: 12px; }
-            .form-actions { flex-direction: column-reverse; }
-            .btn-primary, .btn-cancel { width: 100%; text-align: center; }
-        }
-    </style>
-</head>
-<body>
-
-{% include 'hello/_nav.html' %}
-
-<div class="page-hero">
-    <h1>✏️ Edit Listing</h1>
-    <p>{{ listing.title|truncatechars:60 }}</p>
+{% block content %}
+<div style="background:var(--gradient-dark);padding:2.25rem 1.25rem;text-align:center;color:white;">
+  <h1 style="font-family:var(--font-display);font-size:1.7rem;font-weight:800;margin-bottom:6px;">✏️ Edit Listing</h1>
+  <p style="color:rgba(255,255,255,.65);font-size:.95rem;">{{ listing.title|truncatechars:60 }}</p>
 </div>
 
-<div class="container">
+<div class="ds-container" style="max-width:880px;padding-top:2rem;padding-bottom:4rem;">
 <form method="post" enctype="multipart/form-data" id="edit-form">
-    {% csrf_token %}
+  {% csrf_token %}
 
-    <!-- ── Sync from source ──────────────────────────────────────────────── -->
-    <div class="card">
-        <div class="card-title">🔄 Sync from {{ source_label }}</div>
-        <p style="font-size:.88rem;color:#666;margin-bottom:16px;">
-            Pull the latest data from {{ source_label }} and review what changed before applying.
-        </p>
-        <button type="button" class="sync-btn" id="sync-btn">
-            <span id="sync-icon">🔄</span> Sync from {{ source_label }}
-        </button>
-        <div class="sync-status" id="sync-status"></div>
+  <!-- Sync -->
+  <div class="ds-card ds-reveal" style="padding:1.75rem;margin-bottom:1.5rem;">
+    <h3 style="font-family:var(--font-display);font-size:1.05rem;font-weight:700;color:var(--clr-fg);margin-bottom:.875rem;padding-bottom:.875rem;border-bottom:1px solid var(--clr-border);">🔄 Sync from {{ source_label }}</h3>
+    <p style="font-size:.88rem;color:var(--clr-muted-fg);margin-bottom:1rem;">
+      Pull the latest data from {{ source_label }} and review what changed before applying.
+    </p>
+    <button type="button" class="sync-btn" id="sync-btn">
+      <span id="sync-icon">🔄</span> Sync from {{ source_label }}
+    </button>
+    <div class="sync-status" id="sync-status"></div>
+  </div>
+
+  <!-- Photo -->
+  <div class="ds-card ds-reveal" style="padding:1.75rem;margin-bottom:1.5rem;">
+    <h3 style="font-family:var(--font-display);font-size:1.05rem;font-weight:700;color:var(--clr-fg);margin-bottom:1.25rem;padding-bottom:.875rem;border-bottom:1px solid var(--clr-border);">📸 Listing Photo</h3>
+    <div class="photo-preview-wrap" id="photo-wrap">
+      {% with photo=listing.get_main_photo_url %}
+      {% if photo %}
+        <img src="{{ photo }}" class="photo-preview" id="photo-preview" alt="Listing photo">
+      {% else %}
+        <div class="photo-placeholder" id="photo-placeholder">🏠</div>
+        <img src="" class="photo-preview" id="photo-preview" style="display:none;" alt="Listing photo">
+      {% endif %}
+      {% endwith %}
+    </div>
+    <div class="photo-actions">
+      <label for="photo-file-input" class="photo-upload-btn">📁 Upload new photo</label>
+      <input type="file" id="photo-file-input" name="main_photo" accept="image/*">
+    </div>
+    <div class="photo-url-row">
+      <input type="url" name="main_photo_url" id="photo-url-input" class="form-input"
+             placeholder="Or paste a photo URL…" value="{{ listing.main_photo_url }}">
+    </div>
+  </div>
+
+  <!-- Core details -->
+  <div class="ds-card ds-reveal" style="padding:1.75rem;margin-bottom:1.5rem;">
+    <h3 style="font-family:var(--font-display);font-size:1.05rem;font-weight:700;color:var(--clr-fg);margin-bottom:1.25rem;padding-bottom:.875rem;border-bottom:1px solid var(--clr-border);">🏡 Listing Details</h3>
+    <div class="ds-form-group">
+      <label class="ds-label">Title</label>
+      <input type="text" name="title" class="form-input" value="{{ listing.title }}" required>
+    </div>
+    <div class="form-grid2">
+      <div class="ds-form-group">
+        <label class="ds-label">Location</label>
+        <input type="text" name="location" class="form-input" value="{{ listing.location }}">
+      </div>
+      <div class="ds-form-group">
+        <label class="ds-label">Property type</label>
+        <input type="text" name="property_type" class="form-input" value="{{ listing.property_type }}">
+      </div>
+    </div>
+    <div class="form-grid4">
+      <div class="ds-form-group">
+        <label class="ds-label">Guests</label>
+        <input type="text" name="guests_capacity" class="form-input" value="{{ listing.guests_capacity }}">
+      </div>
+      <div class="ds-form-group">
+        <label class="ds-label">Bedrooms</label>
+        <input type="text" name="bedrooms" class="form-input" value="{{ listing.bedrooms }}">
+      </div>
+      <div class="ds-form-group">
+        <label class="ds-label">Bathrooms</label>
+        <input type="text" name="bathrooms" class="form-input" value="{{ listing.bathrooms }}">
+      </div>
+      <div class="ds-form-group">
+        <label class="ds-label">Status</label>
+        <select name="status" class="form-select">
+          <option value="looking" {% if listing.status == 'looking' %}selected{% endif %}>Looking for Co-Host</option>
+          <option value="reviewing" {% if listing.status == 'reviewing' %}selected{% endif %}>Reviewing Proposals</option>
+          <option value="found" {% if listing.status == 'found' %}selected{% endif %}>Co-Host Found</option>
+          <option value="paused" {% if listing.status == 'paused' %}selected{% endif %}>Paused</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Description -->
+  <div class="ds-card ds-reveal" style="padding:1.75rem;margin-bottom:1.5rem;">
+    <h3 style="font-family:var(--font-display);font-size:1.05rem;font-weight:700;color:var(--clr-fg);margin-bottom:1.25rem;padding-bottom:.875rem;border-bottom:1px solid var(--clr-border);">📝 Co-Hosting Opportunity</h3>
+    <div class="ds-form-group">
+      <label class="ds-label">Description</label>
+      <textarea name="description" class="form-textarea" rows="4" placeholder="Tell co-hosts about this property and the opportunity…">{{ listing.description }}</textarea>
+    </div>
+    <div class="ds-form-group">
+      <label class="ds-label">Co-Host Requirements</label>
+      <textarea name="co_host_requirements" class="form-textarea" rows="4" placeholder="What qualities and experience are you looking for in a co-host?">{{ listing.co_host_requirements }}</textarea>
+    </div>
+  </div>
+
+  <!-- Tasks needed -->
+  <div class="ds-card ds-reveal" style="padding:1.75rem;margin-bottom:1.5rem;">
+    <h3 style="font-family:var(--font-display);font-size:1.05rem;font-weight:700;color:var(--clr-fg);margin-bottom:.5rem;padding-bottom:.875rem;border-bottom:1px solid var(--clr-border);">🛠️ Tasks You Need Help With</h3>
+    <p style="font-size:.85rem;color:var(--clr-muted-fg);margin-bottom:.875rem;">
+      Click tasks to select them, or type below to search and add custom ones.
+    </p>
+
+    <div id="quick-tasks-panel" style="background:hsl(var(--muted));border-radius:10px;padding:14px 16px;margin-bottom:.875rem;border:1px solid var(--clr-border);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:.82rem;font-weight:700;color:var(--clr-muted-fg);text-transform:uppercase;letter-spacing:.5px;">Popular tasks</span>
+        <button type="button" id="select-all-tasks-btn" class="ds-btn ds-btn-muted ds-btn-sm">Select all</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:7px;" id="quick-chips-wrap"></div>
+      <p id="no-popular-tasks" style="font-size:.82rem;color:var(--clr-muted-fg);display:none;">No popular tasks yet — type below to create your own.</p>
     </div>
 
-    <!-- ── Photo ─────────────────────────────────────────────────────────── -->
-    <div class="card">
-        <div class="card-title">📸 Listing Photo</div>
-        <div class="photo-preview-wrap" id="photo-wrap">
-            {% with photo=listing.get_main_photo_url %}
-            {% if photo %}
-                <img src="{{ photo }}" class="photo-preview" id="photo-preview" alt="Listing photo">
-            {% else %}
-                <div class="photo-placeholder" id="photo-placeholder">🏠</div>
-                <img src="" class="photo-preview" id="photo-preview" style="display:none;" alt="Listing photo">
-            {% endif %}
-            {% endwith %}
-        </div>
-        <div class="photo-actions">
-            <label for="photo-file-input" class="photo-upload-btn">
-                📁 Upload new photo
-            </label>
-            <input type="file" id="photo-file-input" name="main_photo" accept="image/*">
-        </div>
-        <div class="photo-url-row">
-            <input type="url" name="main_photo_url" id="photo-url-input" class="form-input"
-                   placeholder="Or paste a photo URL…"
-                   value="{{ listing.main_photo_url }}">
-        </div>
+    <div class="task-wrap">
+      <div class="tag-input-wrap" id="task-tag-wrap">
+        <input type="text" id="task-tag-input" class="tag-input" placeholder="Type to search or add a custom task…" autocomplete="off">
+      </div>
+      <div class="autocomplete-dropdown" id="task-dropdown" style="display:none;"></div>
     </div>
+    <input type="hidden" name="tasks_needed_data" id="tasks-needed-data" value="{{ tasks_needed_json }}">
+  </div>
 
-    <!-- ── Core details ──────────────────────────────────────────────────── -->
-    <div class="card">
-        <div class="card-title">🏡 Listing Details</div>
-        <div class="form-group">
-            <label class="form-label">Title</label>
-            <input type="text" name="title" class="form-input" value="{{ listing.title }}" required>
-        </div>
-        <div class="form-grid2">
-            <div class="form-group">
-                <label class="form-label">Location</label>
-                <input type="text" name="location" class="form-input" value="{{ listing.location }}">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Property type</label>
-                <input type="text" name="property_type" class="form-input" value="{{ listing.property_type }}">
-            </div>
-        </div>
-        <div class="form-grid4">
-            <div class="form-group">
-                <label class="form-label">Guests</label>
-                <input type="text" name="guests_capacity" class="form-input" value="{{ listing.guests_capacity }}">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Bedrooms</label>
-                <input type="text" name="bedrooms" class="form-input" value="{{ listing.bedrooms }}">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Bathrooms</label>
-                <input type="text" name="bathrooms" class="form-input" value="{{ listing.bathrooms }}">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Status</label>
-                <select name="status" class="form-select">
-                    <option value="looking" {% if listing.status == 'looking' %}selected{% endif %}>Looking for Co-Host</option>
-                    <option value="reviewing" {% if listing.status == 'reviewing' %}selected{% endif %}>Reviewing Proposals</option>
-                    <option value="found" {% if listing.status == 'found' %}selected{% endif %}>Co-Host Found</option>
-                    <option value="paused" {% if listing.status == 'paused' %}selected{% endif %}>Paused</option>
-                </select>
-            </div>
-        </div>
+  <!-- Actions -->
+  <div class="ds-card ds-reveal" style="padding:1.25rem 1.75rem;">
+    <div style="display:flex;gap:12px;justify-content:flex-end;align-items:center;">
+      <a href="{% url 'host_dashboard' %}" class="ds-btn ds-btn-muted">Cancel</a>
+      <button type="button" class="ds-btn ds-btn-primary" id="save-btn">💾 Save Changes</button>
     </div>
-
-    <!-- ── Opportunity description ───────────────────────────────────────── -->
-    <div class="card">
-        <div class="card-title">📝 Co-Hosting Opportunity</div>
-        <div class="form-group">
-            <label class="form-label">Description</label>
-            <textarea name="description" class="form-textarea" rows="4" placeholder="Tell co-hosts about this property and the opportunity…">{{ listing.description }}</textarea>
-        </div>
-        <div class="form-group">
-            <label class="form-label">Co-Host Requirements</label>
-            <textarea name="co_host_requirements" class="form-textarea" rows="4" placeholder="What qualities and experience are you looking for in a co-host?">{{ listing.co_host_requirements }}</textarea>
-        </div>
-    </div>
-
-    <!-- ── Tasks needed ───────────────────────────────────────────────────── -->
-    <div class="card">
-        <div class="card-title">🛠️ Tasks You Need Help With</div>
-        <p style="font-size:.85rem;color:#888;margin-bottom:14px;">
-            Click tasks to select them, or type below to search and add custom ones. These appear on your listing so co-hosts know exactly what you need.
-        </p>
-
-        <!-- Quick-select chip panel -->
-        <div id="quick-tasks-panel" style="background:#f8f9fa;border-radius:10px;padding:14px 16px;margin-bottom:14px;border:1px solid #e8e8e8;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                <span style="font-size:.82rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.5px;">Popular tasks</span>
-                <button type="button" id="select-all-tasks-btn"
-                        style="font-size:.82rem;color:#FF385C;background:none;border:1px solid #FF385C;border-radius:20px;padding:3px 12px;cursor:pointer;font-weight:600;transition:all .2s;">
-                    Select all
-                </button>
-            </div>
-            <div style="display:flex;flex-wrap:wrap;gap:7px;" id="quick-chips-wrap">
-                <!-- rendered by JS from POPULAR_TASKS -->
-            </div>
-            <p id="no-popular-tasks" style="font-size:.82rem;color:#bbb;display:none;">No popular tasks yet — type below to create your own.</p>
-        </div>
-
-        <div class="task-wrap">
-            <div class="tag-input-wrap" id="task-tag-wrap">
-                <!-- tags rendered by JS -->
-                <input type="text" id="task-tag-input" class="tag-input" placeholder="Type to search or add a custom task…" autocomplete="off">
-            </div>
-            <div class="autocomplete-dropdown" id="task-dropdown" style="display:none;"></div>
-        </div>
-        <input type="hidden" name="tasks_needed_data" id="tasks-needed-data" value="{{ tasks_needed_json }}">
-    </div>
-
-    <!-- ── Actions ───────────────────────────────────────────────────────── -->
-    <div class="card" style="padding: 20px 28px;">
-        <div class="form-actions">
-            <a href="{% url 'host_dashboard' %}" class="btn-cancel">Cancel</a>
-            <button type="button" class="btn-primary" id="save-btn">💾 Save Changes</button>
-        </div>
-    </div>
+  </div>
 
 </form>
 </div>
 
-<!-- ── Diff Confirm Modal ─────────────────────────────────────────────────── -->
+<!-- Diff Modal -->
 <div class="modal-overlay" id="diff-modal">
-    <div class="modal-box">
-        <div class="modal-hero">
-            <h2>🔄 Review Sync Changes</h2>
-            <p>Select the changes you want to apply to your listing, then click Apply.</p>
-        </div>
-        <div class="modal-body" id="diff-modal-body">
-            <!-- populated by JS -->
-        </div>
-        <div class="modal-footer">
-            <button class="btn-modal-discard" id="diff-discard-btn">Discard All</button>
-            <button class="btn-modal-apply" id="diff-apply-btn">✅ Apply Selected</button>
-        </div>
+  <div class="modal-box">
+    <div class="modal-hero">
+      <h2>🔄 Review Sync Changes</h2>
+      <p>Select the changes you want to apply to your listing, then click Apply.</p>
     </div>
+    <div class="modal-body" id="diff-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn-modal-discard" id="diff-discard-btn">Discard All</button>
+      <button class="btn-modal-apply" id="diff-apply-btn">✅ Apply Selected</button>
+    </div>
+  </div>
 </div>
 
-<!-- ── Save Confirm Modal ─────────────────────────────────────────────────── -->
+<!-- Save Confirm Modal -->
 <div class="modal-overlay" id="save-modal">
-    <div class="modal-box">
-        <div class="modal-hero">
-            <h2>💾 Confirm Changes</h2>
-            <p>Review what you're about to save to your listing.</p>
-        </div>
-        <div class="modal-body" id="save-modal-body">
-            <!-- populated by JS -->
-        </div>
-        <div class="modal-footer">
-            <button class="btn-modal-discard" id="save-cancel-btn">Cancel</button>
-            <button class="btn-modal-apply" id="save-confirm-btn">✅ Save Changes</button>
-        </div>
+  <div class="modal-box">
+    <div class="modal-hero">
+      <h2>💾 Confirm Changes</h2>
+      <p>Review what you're about to save to your listing.</p>
     </div>
+    <div class="modal-body" id="save-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn-modal-discard" id="save-cancel-btn">Cancel</button>
+      <button class="btn-modal-apply" id="save-confirm-btn">✅ Save Changes</button>
+    </div>
+  </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
 function escHTML(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-// ── Existing values snapshot (for diff popup on save) ──────────────────────
 const ORIGINAL = {
     title:                "{{ listing.title|escapejs }}",
     location:             "{{ listing.location|escapejs }}",
@@ -375,14 +265,12 @@ const ORIGINAL = {
     co_host_requirements: "{{ listing.co_host_requirements|escapejs }}",
     status:               "{{ listing.status }}",
 };
-// Map form field names → pretty labels
 const FIELD_LABELS = {
     title: 'Title', location: 'Location', property_type: 'Property type',
     guests_capacity: 'Guests', bedrooms: 'Bedrooms', bathrooms: 'Bathrooms',
     description: 'Description', co_host_requirements: 'Requirements', status: 'Status',
 };
 
-// ── Photo upload preview ───────────────────────────────────────────────────
 const photoInput = document.getElementById('photo-file-input');
 const photoPreview = document.getElementById('photo-preview');
 const photoPlaceholder = document.getElementById('photo-placeholder');
@@ -399,9 +287,8 @@ photoInput.addEventListener('change', () => {
     reader.readAsDataURL(photoInput.files[0]);
 });
 
-// ── Task tagging ───────────────────────────────────────────────────────────
-const POPULAR_TASKS    = {{ popular_tasks_json|safe }};
-const EXISTING_IDS     = new Set({{ existing_task_ids_json|safe }});
+const POPULAR_TASKS = {{ popular_tasks_json|safe }};
+const EXISTING_IDS  = new Set({{ existing_task_ids_json|safe }});
 const ORIG_TASKS = JSON.parse(document.getElementById('tasks-needed-data').value || '[]');
 let tasks = JSON.parse(document.getElementById('tasks-needed-data').value || '[]');
 const tagWrap   = document.getElementById('task-tag-wrap');
@@ -410,15 +297,13 @@ const dropdown  = document.getElementById('task-dropdown');
 const hiddenInput = document.getElementById('tasks-needed-data');
 let ddActive = -1;
 
-// ── Quick-select chip panel ────────────────────────────────────────────────
-const chipsWrap      = document.getElementById('quick-chips-wrap');
-const noPopularNote  = document.getElementById('no-popular-tasks');
+const chipsWrap     = document.getElementById('quick-chips-wrap');
+const noPopularNote = document.getElementById('no-popular-tasks');
 
 function buildChips() {
     chipsWrap.innerHTML = '';
     if (!POPULAR_TASKS.length) { noPopularNote.style.display = 'block'; return; }
     noPopularNote.style.display = 'none';
-
     POPULAR_TASKS.forEach(t => {
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -426,32 +311,24 @@ function buildChips() {
         btn.dataset.taskId   = t.id || '';
         btn.dataset.taskName = t.name;
         btn.textContent      = '+ ' + t.name;
-        Object.assign(btn.style, {
-            background: 'white', color: '#333', border: '1.5px solid #ddd',
-            borderRadius: '20px', padding: '5px 13px', fontSize: '.83rem',
-            cursor: 'pointer', transition: 'all .2s', fontWeight: '500',
-        });
-        if (tasks.some(sel => sel.name.toLowerCase() === t.name.toLowerCase())) {
-            markChipSelected(btn, t.name);
-        }
+        Object.assign(btn.style, { background: 'white', color: 'var(--clr-fg)', border: '1.5px solid var(--clr-border)', borderRadius: '20px', padding: '5px 13px', fontSize: '.83rem', cursor: 'pointer', transition: 'all .2s', fontWeight: '500' });
+        if (tasks.some(sel => sel.name.toLowerCase() === t.name.toLowerCase())) markChipSelected(btn, t.name);
         btn.addEventListener('click', () => activateChip(btn));
         chipsWrap.appendChild(btn);
     });
-
-    // Remove chips that fall on row 4+ (keep max 3 rows)
     const allChips = Array.from(chipsWrap.querySelectorAll('.quick-chip'));
     if (allChips.length === 0) return;
     const rowHeight = allChips[0].offsetHeight;
-    const maxTop    = allChips[0].offsetTop + 2 * (rowHeight + 7); // 7px = flex gap
+    const maxTop    = allChips[0].offsetTop + 2 * (rowHeight + 7);
     allChips.forEach(chip => { if (chip.offsetTop > maxTop) chip.remove(); });
 }
 
 function markChipSelected(chip, name) {
     chip.style.opacity       = '0.5';
     chip.style.pointerEvents = 'none';
-    chip.style.background    = '#28a745';
+    chip.style.background    = 'hsl(145 60% 42%)';
     chip.style.color         = 'white';
-    chip.style.borderColor   = '#28a745';
+    chip.style.borderColor   = 'hsl(145 60% 42%)';
     chip.textContent         = '✓ ' + name;
 }
 
@@ -468,24 +345,21 @@ document.getElementById('select-all-tasks-btn').addEventListener('click', () => 
     });
 });
 
-// Sync chip states whenever tags change (e.g. a tag is removed)
 function syncChipStates() {
     chipsWrap.querySelectorAll('.quick-chip').forEach(chip => {
         const isSelected = tasks.some(t => t.name.toLowerCase() === chip.dataset.taskName.toLowerCase());
         if (isSelected) {
             markChipSelected(chip, chip.dataset.taskName);
         } else {
-            // Re-enable chip
             chip.style.opacity       = '1';
             chip.style.pointerEvents = 'auto';
             chip.style.background    = 'white';
-            chip.style.color         = '#333';
-            chip.style.borderColor   = '#ddd';
+            chip.style.color         = 'var(--clr-fg)';
+            chip.style.borderColor   = 'var(--clr-border)';
             chip.textContent         = '+ ' + chip.dataset.taskName;
         }
     });
 }
-// ─────────────────────────────────────────────────────────────────────────────
 
 function renderTags() {
     tagWrap.querySelectorAll('.tag-pill').forEach(el => el.remove());
@@ -507,40 +381,21 @@ function addTask(name, id) {
     closeDropdown();
 }
 tagWrap.addEventListener('click', e => {
-    if (e.target.classList.contains('remove-tag')) {
-        tasks.splice(+e.target.dataset.idx, 1);
-        renderTags();
-    } else {
-        tagInput.focus();
-    }
+    if (e.target.classList.contains('remove-tag')) { tasks.splice(+e.target.dataset.idx, 1); renderTags(); }
+    else tagInput.focus();
 });
 tagInput.addEventListener('keydown', e => {
     if (e.key === 'Enter' || e.key === ',') {
         e.preventDefault();
-        if (ddActive >= 0) {
-            const items = dropdown.querySelectorAll('.autocomplete-item');
-            if (items[ddActive]) items[ddActive].click();
-        } else if (tagInput.value.trim()) {
-            addTask(tagInput.value.trim(), null);
-        }
+        if (ddActive >= 0) { const items = dropdown.querySelectorAll('.autocomplete-item'); if (items[ddActive]) items[ddActive].click(); }
+        else if (tagInput.value.trim()) addTask(tagInput.value.trim(), null);
     } else if (e.key === 'Backspace' && !tagInput.value && tasks.length) {
-        tasks.pop();
-        renderTags();
-    } else if (e.key === 'ArrowDown') {
-        ddActive = Math.min(ddActive + 1, dropdown.querySelectorAll('.autocomplete-item').length - 1);
-        highlightDD();
-    } else if (e.key === 'ArrowUp') {
-        ddActive = Math.max(ddActive - 1, -1);
-        highlightDD();
-    } else if (e.key === 'Escape') {
-        closeDropdown();
-    }
+        tasks.pop(); renderTags();
+    } else if (e.key === 'ArrowDown') { ddActive = Math.min(ddActive + 1, dropdown.querySelectorAll('.autocomplete-item').length - 1); highlightDD(); }
+    else if (e.key === 'ArrowUp') { ddActive = Math.max(ddActive - 1, -1); highlightDD(); }
+    else if (e.key === 'Escape') closeDropdown();
 });
-function highlightDD() {
-    dropdown.querySelectorAll('.autocomplete-item').forEach((el, i) => {
-        el.classList.toggle('active', i === ddActive);
-    });
-}
+function highlightDD() { dropdown.querySelectorAll('.autocomplete-item').forEach((el, i) => el.classList.toggle('active', i === ddActive)); }
 function closeDropdown() { dropdown.style.display = 'none'; ddActive = -1; }
 
 tagInput.addEventListener('input', () => {
@@ -551,10 +406,7 @@ tagInput.addEventListener('input', () => {
             const list = (data.tasks || []).filter(t => !tasks.some(sel => sel.name.toLowerCase() === t.name.toLowerCase()));
             if (!list.length) { closeDropdown(); return; }
             dropdown.innerHTML = list.slice(0, 6).map((t, i) =>
-                `<div class="autocomplete-item" data-id="${t.id||''}" data-name="${escHTML(t.name)}">
-                    ${escHTML(t.name)}
-                    ${!t.exists ? '<span class="new-badge">+ New</span>' : ''}
-                </div>`
+                `<div class="autocomplete-item" data-id="${t.id||''}" data-name="${escHTML(t.name)}">${escHTML(t.name)}${!t.exists ? '<span class="new-badge">+ New</span>' : ''}</div>`
             ).join('');
             dropdown.querySelectorAll('.autocomplete-item').forEach(el => {
                 el.addEventListener('click', () => addTask(el.dataset.name, el.dataset.id || null));
@@ -566,11 +418,10 @@ tagInput.addEventListener('input', () => {
 tagInput.addEventListener('blur', () => setTimeout(closeDropdown, 150));
 tagInput.addEventListener('focus', () => { if (tagInput.value) tagInput.dispatchEvent(new Event('input')); });
 
-// Initial render
 buildChips();
 renderTags();
 
-// ── Sync from source ───────────────────────────────────────────────────────
+// Sync
 const syncBtn    = document.getElementById('sync-btn');
 const syncStatus = document.getElementById('sync-status');
 const diffModal  = document.getElementById('diff-modal');
@@ -581,15 +432,12 @@ syncBtn.addEventListener('click', async () => {
     syncBtn.disabled = true;
     document.getElementById('sync-icon').textContent = '⏳';
     syncStatus.textContent = 'Connecting to {{ source_label }} and scraping latest data…';
-
     try {
         const fd = new FormData();
         fd.append('action', 'sync');
         fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-
         const resp = await fetch(window.location.href, { method: 'POST', body: fd });
         const data = await resp.json();
-
         if (data.error) {
             syncStatus.textContent = '❌ ' + data.error;
         } else if (data.no_changes) {
@@ -608,55 +456,24 @@ syncBtn.addEventListener('click', async () => {
 });
 
 function openDiffModal(changes) {
-    diffBody.innerHTML = `
-        <table class="diff-table">
-            <thead><tr>
-                <th class="diff-check"><input type="checkbox" id="dd-check-all" checked title="Select all"></th>
-                <th>Field</th>
-                <th>Current value</th>
-                <th class="diff-arrow"></th>
-                <th>New value</th>
-            </tr></thead>
-            <tbody>
-            ${changes.map((c, i) => `
-                <tr>
-                    <td class="diff-check"><input type="checkbox" class="diff-row-check" data-idx="${i}" checked></td>
-                    <td class="diff-field">${escHTML(c.label)}</td>
-                    <td class="diff-old">${escHTML(c.old || '—')}</td>
-                    <td class="diff-arrow">→</td>
-                    <td class="diff-new">${escHTML(c.new)}</td>
-                </tr>
-            `).join('')}
-            </tbody>
-        </table>`;
-
+    diffBody.innerHTML = `<table class="diff-table"><thead><tr><th class="diff-check"><input type="checkbox" id="dd-check-all" checked title="Select all"></th><th>Field</th><th>Current value</th><th class="diff-arrow"></th><th>New value</th></tr></thead><tbody>${changes.map((c, i) => `<tr><td class="diff-check"><input type="checkbox" class="diff-row-check" data-idx="${i}" checked></td><td class="diff-field">${escHTML(c.label)}</td><td class="diff-old">${escHTML(c.old || '—')}</td><td class="diff-arrow">→</td><td class="diff-new">${escHTML(c.new)}</td></tr>`).join('')}</tbody></table>`;
     document.getElementById('dd-check-all').addEventListener('change', function() {
         diffBody.querySelectorAll('.diff-row-check').forEach(cb => cb.checked = this.checked);
     });
-
     diffModal.classList.add('open');
 }
 
 document.getElementById('diff-discard-btn').addEventListener('click', () => diffModal.classList.remove('open'));
-
 document.getElementById('diff-apply-btn').addEventListener('click', () => {
     if (!pendingSyncData) return;
     const checked = [...diffBody.querySelectorAll('.diff-row-check:checked')].map(cb => +cb.dataset.idx);
-    checked.forEach(idx => {
-        const c = pendingSyncData.changes[idx];
-        applyFieldToForm(c.field, c.new);
-    });
+    checked.forEach(idx => { const c = pendingSyncData.changes[idx]; applyFieldToForm(c.field, c.new); });
     diffModal.classList.remove('open');
     syncStatus.textContent = `✅ Applied ${checked.length} change${checked.length !== 1 ? 's' : ''}.`;
 });
 
 function applyFieldToForm(field, value) {
-    // Map scraper field names to form field names
-    const map = {
-        title: 'title', location: 'location', property_type: 'property_type',
-        guests_capacity: 'guests_capacity', bedrooms: 'bedrooms', bathrooms: 'bathrooms',
-        main_photo_url: 'main_photo_url',
-    };
+    const map = { title: 'title', location: 'location', property_type: 'property_type', guests_capacity: 'guests_capacity', bedrooms: 'bedrooms', bathrooms: 'bathrooms', main_photo_url: 'main_photo_url' };
     const formName = map[field];
     if (!formName) return;
     if (formName === 'main_photo_url') {
@@ -670,7 +487,6 @@ function applyFieldToForm(field, value) {
     }
 }
 
-// Close modals on overlay click
 [diffModal, document.getElementById('save-modal')].forEach(m => {
     m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
 });
@@ -678,27 +494,21 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
 });
 
-// ── Save confirmation popup ────────────────────────────────────────────────
-const saveModal    = document.getElementById('save-modal');
-const saveBody     = document.getElementById('save-modal-body');
-const saveBtn      = document.getElementById('save-btn');
+const saveModal     = document.getElementById('save-modal');
+const saveBody      = document.getElementById('save-modal-body');
+const saveBtn       = document.getElementById('save-btn');
 const saveCancelBtn = document.getElementById('save-cancel-btn');
 const saveConfirmBtn = document.getElementById('save-confirm-btn');
-const editForm     = document.getElementById('edit-form');
+const editForm      = document.getElementById('edit-form');
 
 saveBtn.addEventListener('click', () => {
     const fd = new FormData(editForm);
     const diffs = [];
-
     for (const [fname, label] of Object.entries(FIELD_LABELS)) {
         const oldVal = ORIGINAL[fname] || '';
         const newVal = (fd.get(fname) || '').trim();
-        if (oldVal !== newVal) {
-            diffs.push({ label, old: oldVal, new: newVal });
-        }
+        if (oldVal !== newVal) diffs.push({ label, old: oldVal, new: newVal });
     }
-
-    // Photo changes
     const photoFile = photoInput.files[0];
     if (photoFile) diffs.push({ label: 'Photo', old: '(current photo)', new: photoFile.name });
     else {
@@ -706,46 +516,17 @@ saveBtn.addEventListener('click', () => {
         const oldUrl = "{{ listing.main_photo_url|escapejs }}";
         if (newUrl !== oldUrl) diffs.push({ label: 'Photo URL', old: oldUrl || '—', new: newUrl || '—' });
     }
-
-    // Tasks
     const origTaskNames = ORIG_TASKS.map(t => t.name).sort().join(', ');
     const newTaskNames = tasks.map(t => t.name).sort().join(', ');
-    if (origTaskNames !== newTaskNames) {
-        diffs.push({ label: 'Tasks needed', old: origTaskNames || '—', new: newTaskNames || '—' });
-    }
+    if (origTaskNames !== newTaskNames) diffs.push({ label: 'Tasks needed', old: origTaskNames || '—', new: newTaskNames || '—' });
 
-    if (diffs.length === 0) {
-        // Nothing changed — just submit
-        editForm.submit();
-        return;
-    }
+    if (diffs.length === 0) { editForm.submit(); return; }
 
-    saveBody.innerHTML = `
-        <p style="font-size:.88rem;color:#666;margin-bottom:16px;">The following fields will be updated:</p>
-        <table class="diff-table">
-            <thead><tr>
-                <th>Field</th>
-                <th>Current value</th>
-                <th class="diff-arrow"></th>
-                <th>New value</th>
-            </tr></thead>
-            <tbody>
-            ${diffs.map(d => `
-                <tr>
-                    <td class="diff-field">${escHTML(d.label)}</td>
-                    <td class="diff-old">${escHTML(String(d.old).slice(0,120) || '—')}</td>
-                    <td class="diff-arrow">→</td>
-                    <td class="diff-new">${escHTML(String(d.new).slice(0,120))}</td>
-                </tr>
-            `).join('')}
-            </tbody>
-        </table>`;
+    saveBody.innerHTML = `<p style="font-size:.88rem;color:var(--clr-muted-fg);margin-bottom:16px;">The following fields will be updated:</p><table class="diff-table"><thead><tr><th>Field</th><th>Current value</th><th class="diff-arrow"></th><th>New value</th></tr></thead><tbody>${diffs.map(d => `<tr><td class="diff-field">${escHTML(d.label)}</td><td class="diff-old">${escHTML(String(d.old).slice(0,120)||'—')}</td><td class="diff-arrow">→</td><td class="diff-new">${escHTML(String(d.new).slice(0,120))}</td></tr>`).join('')}</tbody></table>`;
     saveModal.classList.add('open');
 });
 
 saveCancelBtn.addEventListener('click', () => saveModal.classList.remove('open'));
 saveConfirmBtn.addEventListener('click', () => { saveModal.classList.remove('open'); editForm.submit(); });
 </script>
-
-</body>
-</html>
+{% endblock %}

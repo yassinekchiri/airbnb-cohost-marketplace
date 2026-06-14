@@ -1,509 +1,241 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Edit Proposal - {{ listing.title }}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f8f9fa;
-            color: #333;
-        }
-        .header {
-            background: linear-gradient(135deg, #FF385C, #E31C3D);
-            color: white;
-            padding: 1rem 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .nav {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-        }
-        .nav-links {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-        .nav-links a {
-            color: white;
-            text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            transition: background 0.3s;
-        }
-        .nav-links a:hover {
-            background: rgba(255,255,255,0.2);
-        }
-        .btn-primary {
-            background: white !important;
-            color: #FF385C !important;
-            font-weight: bold;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-        .edit-form {
-            background: white;
-            border-radius: 15px;
-            padding: 40px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        }
-        .form-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .form-header h1 {
-            color: #333;
-            margin-bottom: 10px;
-        }
-        .form-header p {
-            color: #666;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-        }
-        .form-control {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-        .form-control:focus {
-            outline: none;
-            border-color: #FF385C;
-        }
+{% extends 'hello/base.html' %}
 
-        /* Task Tagging Styles */
-        .task-input-container {
-            position: relative;
-        }
-        .task-input-wrapper {
-            position: relative;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 8px;
-            min-height: 50px;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 6px;
-            background: white;
-            cursor: text;
-            transition: border-color 0.3s;
-        }
-        .task-input-wrapper:focus-within {
-            border-color: #FF385C;
-        }
-        .task-input-wrapper input {
-            border: none;
-            outline: none;
-            flex: 1;
-            min-width: 150px;
-            padding: 4px;
-            font-size: 16px;
-            background: transparent;
-        }
-        .task-suggestions {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 1px solid #ddd;
-            border-top: none;
-            border-radius: 0 0 8px 8px;
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 1000;
-            display: none;
-        }
-        .task-suggestion {
-            padding: 10px 15px;
-            cursor: pointer;
-            border-bottom: 1px solid #f0f0f0;
-            transition: background 0.2s;
-        }
-        .task-suggestion:last-child {
-            border-bottom: none;
-        }
-        .task-suggestion:hover {
-            background: #f8f9fa;
-        }
-        .task-suggestion.new-task {
-            background: #f0f8ff;
-            border-left: 3px solid #FF385C;
-        }
-        .task-suggestion.new-task:hover {
-            background: #e6f3ff;
-        }
-        .task-tag {
-            background: #FF385C;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 13px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-            transition: background 0.3s;
-            flex-shrink: 0;
-        }
-        .task-tag:hover {
-            background: #E31C3D;
-        }
-        .task-tag .remove-task {
-            background: rgba(255,255,255,0.3);
-            border: none;
-            color: white;
-            border-radius: 50%;
-            width: 16px;
-            height: 16px;
-            font-size: 11px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            line-height: 1;
-        }
-        .task-tag .remove-task:hover {
-            background: rgba(255,255,255,0.5);
-        }
+{% block title %}Edit Proposal — {{ listing.title }}{% endblock %}
 
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 25px;
-            font-size: 16px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            transition: all 0.3s;
-            font-weight: bold;
-        }
-        .btn-submit {
-            background: #FF385C;
-            color: white;
-        }
-        .btn-submit:hover {
-            background: #E31C3D;
-        }
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-            margin-right: 10px;
-        }
-        .btn-secondary:hover {
-            background: #5a6268;
-        }
-        .alert {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .form-text {
-            font-size: 14px;
-            color: #666;
-        }
-    </style>
-</head>
-<body>
-    {% include 'hello/_nav.html' %}
+{% block extra_css %}
+<style>
+.task-input-container { position: relative; }
+.task-input-wrapper {
+    border: 1.5px solid var(--clr-border); border-radius: 10px; padding: 8px;
+    min-height: 50px; display: flex; flex-wrap: wrap; align-items: center;
+    gap: 6px; background: hsl(var(--muted)); cursor: text; transition: border-color 0.2s;
+}
+.task-input-wrapper:focus-within { border-color: var(--clr-primary); background: white; }
+.task-input-wrapper input { border: none; outline: none; flex: 1; min-width: 150px; padding: 4px; font-size: .9rem; font-family: var(--font-body); background: transparent; }
+.task-suggestions {
+    position: absolute; top: 100%; left: 0; right: 0;
+    background: white; border: 1px solid var(--clr-border); border-top: none;
+    border-radius: 0 0 10px 10px; max-height: 200px; overflow-y: auto;
+    z-index: 1000; display: none; box-shadow: var(--shadow-elevated);
+}
+.task-suggestion { padding: 10px 15px; cursor: pointer; border-bottom: 1px solid var(--clr-border); transition: background 0.15s; font-size: .9rem; }
+.task-suggestion:last-child { border-bottom: none; }
+.task-suggestion:hover { background: hsl(var(--muted)); }
+.task-suggestion.new-task { background: hsl(145 60% 97%); border-left: 3px solid hsl(145 60% 42%); }
+.task-suggestion.new-task:hover { background: hsl(145 60% 93%); }
+.task-tag {
+    background: var(--gradient-warm); color: white; padding: 4px 8px;
+    border-radius: 12px; font-size: 13px; display: inline-flex; align-items: center;
+    gap: 6px; cursor: pointer; transition: opacity .2s; flex-shrink: 0;
+}
+.task-tag:hover { opacity: .85; }
+.task-tag .remove-task { background: rgba(255,255,255,0.3); border: none; color: white; border-radius: 50%; width: 16px; height: 16px; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; }
+.task-tag .remove-task:hover { background: rgba(255,255,255,0.5); }
+</style>
+{% endblock %}
 
-    <div class="container">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-success">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
+{% block content %}
+<div class="ds-container" style="padding-top:2.5rem;padding-bottom:4rem;max-width:820px;">
 
-        <div class="edit-form">
-            <div class="form-header">
-                <h1>Edit Your Proposal</h1>
-                <p>Update your proposal for: <strong>{{ listing.title }}</strong></p>
-                <p style="color: #666; font-size: 14px; margin-top: 10px;">{{ listing.location }}</p>
-            </div>
+  {% if messages %}
+    {% for message in messages %}
+      <div class="ds-alert ds-alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
 
-            <form method="post">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label for="id_message">{{ form.message.label }}</label>
-                    {{ form.message }}
-                </div>
+  <div class="ds-dash-header ds-reveal" style="margin-bottom:2rem;">
+    <h1>Edit Your Proposal</h1>
+    <p>Update your proposal for: <strong>{{ listing.title }}</strong></p>
+    <p style="color:var(--clr-muted-fg);font-size:.9rem;margin-top:4px;">{{ listing.location }}</p>
+  </div>
 
-                <div class="form-group">
-                    <label for="tasks_input">Tasks You Can Provide</label>
-                    <div class="task-input-container">
-                        <div class="task-input-wrapper" id="task_input_wrapper">
-                            <div id="selected_tasks" class="selected-tasks-inline"></div>
-                            <input type="text" id="tasks_input" placeholder="Click to see all tasks or start typing to search..." autocomplete="off">
-                        </div>
-                        <div id="task_suggestions" class="task-suggestions"></div>
-                    </div>
-                    {{ form.tasks }}
-                    <small class="form-text">Start typing to see suggestions or create new tasks. Click on suggestions to add them as tags.</small>
-                </div>
+  <div class="ds-card ds-reveal" style="padding:2rem;">
+    <form method="post">
+      {% csrf_token %}
 
-                <div class="form-group">
-                    <label for="id_rate_type">{{ form.rate_type.label }}</label>
-                    {{ form.rate_type }}
-                </div>
+      <div class="ds-form-group">
+        <label class="ds-label" for="id_message">{{ form.message.label }}</label>
+        {{ form.message }}
+      </div>
 
-                <div class="form-group" id="rate_input_group" style="display: none;">
-                    <label for="id_offered_rate">
-                        <span id="rate_label_text">Your Rate</span>
-                        <span id="rate_unit_text"></span>
-                    </label>
-                    {{ form.offered_rate }}
-                    <small id="rate_help_text" class="form-text"></small>
-                </div>
-
-                <div style="margin-top: 30px; display: flex; gap: 15px;">
-                    <button type="submit" class="btn btn-submit">Update Proposal</button>
-                    <a href="{% url 'listing_detail' listing.id %}" class="btn btn-secondary">Cancel</a>
-                </div>
-            </form>
+      <div class="ds-form-group">
+        <label class="ds-label">Tasks You Can Provide</label>
+        <div class="task-input-container">
+          <div class="task-input-wrapper" id="task_input_wrapper">
+            <div id="selected_tasks" class="selected-tasks-inline"></div>
+            <input type="text" id="tasks_input" placeholder="Click to see all tasks or start typing to search..." autocomplete="off">
+          </div>
+          <div id="task_suggestions" class="task-suggestions"></div>
         </div>
-    </div>
+        {{ form.tasks }}
+        <small style="font-size:.82rem;color:var(--clr-muted-fg);margin-top:4px;display:block;">Start typing to see suggestions or create new tasks.</small>
+      </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Rate Type functionality (same as create proposal)
-            const rateTypeSelect = document.getElementById('rate_type_select');
-            const rateInputGroup = document.getElementById('rate_input_group');
-            const rateInput = document.getElementById('rate_input');
-            const rateLabelText = document.getElementById('rate_label_text');
-            const rateUnitText = document.getElementById('rate_unit_text');
-            const rateHelpText = document.getElementById('rate_help_text');
+      <div class="ds-form-group">
+        <label class="ds-label" for="id_rate_type">{{ form.rate_type.label }}</label>
+        {{ form.rate_type }}
+      </div>
 
-            function updateRateInput() {
-                const selectedType = rateTypeSelect.value;
+      <div class="ds-form-group" id="rate_input_group" style="display:none;">
+        <label class="ds-label">
+          <span id="rate_label_text">Your Rate</span>
+          <span id="rate_unit_text" style="font-weight:400;color:var(--clr-muted-fg);"></span>
+        </label>
+        {{ form.offered_rate }}
+        <small id="rate_help_text" style="font-size:.82rem;color:var(--clr-muted-fg);margin-top:4px;display:block;"></small>
+      </div>
 
-                if (selectedType === '') {
-                    rateInputGroup.style.display = 'none';
-                    rateInput.value = '';
-                } else {
-                    rateInputGroup.style.display = 'block';
+      <div style="margin-top:2rem;display:flex;gap:12px;flex-wrap:wrap;">
+        <button type="submit" class="ds-btn ds-btn-primary">Update Proposal</button>
+        <a href="{% url 'listing_detail' listing.id %}" class="ds-btn ds-btn-muted">Cancel</a>
+      </div>
+    </form>
+  </div>
 
-                    if (selectedType === 'fixed') {
-                        rateLabelText.textContent = 'Fixed Rate';
-                        rateUnitText.textContent = '($/day)';
-                        rateInput.placeholder = 'e.g., 150.00';
-                        rateInput.step = '0.01';
-                        rateInput.min = '0';
-                        rateInput.max = '9999.99';
-                        rateHelpText.textContent = 'Enter your daily rate in dollars';
-                    } else if (selectedType === 'percentage') {
-                        rateLabelText.textContent = 'Revenue Share';
-                        rateUnitText.textContent = '(% of revenue)';
-                        rateInput.placeholder = 'e.g., 15';
-                        rateInput.step = '0.1';
-                        rateInput.min = '0';
-                        rateInput.max = '100';
-                        rateHelpText.textContent = 'Enter percentage of revenue (0-100%)';
-                    }
-                }
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Apply ds-input class to Django-rendered form fields
+    document.querySelectorAll('.ds-card textarea, .ds-card select, .ds-card input[type=number]').forEach(function(el) {
+        el.classList.add('ds-input');
+    });
+
+    const rateTypeSelect = document.getElementById('rate_type_select');
+    const rateInputGroup = document.getElementById('rate_input_group');
+    const rateInput = document.getElementById('rate_input');
+    const rateLabelText = document.getElementById('rate_label_text');
+    const rateUnitText = document.getElementById('rate_unit_text');
+    const rateHelpText = document.getElementById('rate_help_text');
+
+    function updateRateInput() {
+        const selectedType = rateTypeSelect.value;
+        if (selectedType === '') {
+            rateInputGroup.style.display = 'none';
+            rateInput.value = '';
+        } else {
+            rateInputGroup.style.display = 'block';
+            if (selectedType === 'fixed') {
+                rateLabelText.textContent = 'Fixed Rate';
+                rateUnitText.textContent = '($/day)';
+                rateInput.placeholder = 'e.g., 150.00';
+                rateInput.step = '0.01'; rateInput.min = '0'; rateInput.max = '9999.99';
+                rateHelpText.textContent = 'Enter your daily rate in dollars';
+            } else if (selectedType === 'percentage') {
+                rateLabelText.textContent = 'Revenue Share';
+                rateUnitText.textContent = '(% of revenue)';
+                rateInput.placeholder = 'e.g., 15';
+                rateInput.step = '0.1'; rateInput.min = '0'; rateInput.max = '100';
+                rateHelpText.textContent = 'Enter percentage of revenue (0-100%)';
             }
+        }
+    }
 
-            rateTypeSelect.addEventListener('change', updateRateInput);
-            updateRateInput();
+    rateTypeSelect.addEventListener('change', updateRateInput);
+    updateRateInput();
 
-            // Task Tagging functionality (same as create proposal)
-            const tasksInput = document.getElementById('tasks_input');
-            const taskSuggestions = document.getElementById('task_suggestions');
-            const selectedTasksContainer = document.getElementById('selected_tasks');
-            const tasksHidden = document.getElementById('tasks_hidden');
-            const taskInputWrapper = document.getElementById('task_input_wrapper');
+    const tasksInput = document.getElementById('tasks_input');
+    const taskSuggestions = document.getElementById('task_suggestions');
+    const selectedTasksContainer = document.getElementById('selected_tasks');
+    const tasksHidden = document.getElementById('tasks_hidden');
+    const taskInputWrapper = document.getElementById('task_input_wrapper');
 
-            let selectedTasks = [];
-            let currentTimeout;
+    let selectedTasks = [];
+    let currentTimeout;
 
-            // Load existing tasks
-            const existingTasksData = {{ existing_tasks|safe }};
-            if (existingTasksData && existingTasksData.length > 0) {
-                selectedTasks = existingTasksData;
-                renderSelectedTasks();
-                updateHiddenInput();
-            }
+    const existingTasksData = {{ existing_tasks|safe }};
+    if (existingTasksData && existingTasksData.length > 0) {
+        selectedTasks = existingTasksData;
+        renderSelectedTasks();
+        updateHiddenInput();
+    }
 
-            function updateHiddenInput() {
-                tasksHidden.value = JSON.stringify(selectedTasks);
-            }
+    function updateHiddenInput() {
+        tasksHidden.value = JSON.stringify(selectedTasks);
+    }
 
-            function addTask(taskName, taskId = null) {
-                if (selectedTasks.some(task => task.name === taskName)) {
-                    return;
-                }
+    function addTask(taskName, taskId = null) {
+        if (selectedTasks.some(task => task.name === taskName)) return;
+        const task = { name: taskName, id: taskId };
+        selectedTasks.push(task);
+        renderSelectedTasks();
+        updateHiddenInput();
+        tasksInput.value = '';
+        if (taskSuggestions.style.display === 'block') {
+            fetchSuggestions(tasksInput.value.trim());
+        } else {
+            hideSuggestions();
+        }
+    }
 
-                const task = { name: taskName, id: taskId };
-                selectedTasks.push(task);
+    function removeTask(taskName) {
+        selectedTasks = selectedTasks.filter(task => task.name !== taskName);
+        renderSelectedTasks();
+        updateHiddenInput();
+        if (taskSuggestions.style.display === 'block') {
+            fetchSuggestions(tasksInput.value.trim());
+        }
+    }
 
-                renderSelectedTasks();
-                updateHiddenInput();
-                tasksInput.value = '';
-
-                if (taskSuggestions.style.display === 'block') {
-                    const currentQuery = tasksInput.value.trim();
-                    fetchSuggestions(currentQuery);
-                } else {
-                    hideSuggestions();
-                }
-            }
-
-            function removeTask(taskName) {
-                selectedTasks = selectedTasks.filter(task => task.name !== taskName);
-                renderSelectedTasks();
-                updateHiddenInput();
-
-                if (taskSuggestions.style.display === 'block') {
-                    const currentQuery = tasksInput.value.trim();
-                    fetchSuggestions(currentQuery);
-                }
-            }
-
-            function renderSelectedTasks() {
-                selectedTasksContainer.innerHTML = '';
-                selectedTasks.forEach(task => {
-                    const taskTag = document.createElement('div');
-                    taskTag.className = 'task-tag';
-                    taskTag.innerHTML = `
-                        <span>${task.name}</span>
-                        <button type="button" class="remove-task" onclick="removeTaskHandler('${task.name}')">×</button>
-                    `;
-                    selectedTasksContainer.appendChild(taskTag);
-                });
-
-                if (selectedTasks.length > 0) {
-                    tasksInput.placeholder = 'Add more tasks...';
-                } else {
-                    tasksInput.placeholder = 'Click to see all tasks or start typing to search...';
-                }
-            }
-
-            function showSuggestions(suggestions, showingAllTasks = false) {
-                if (suggestions.length === 0) {
-                    hideSuggestions();
-                    return;
-                }
-
-                const availableSuggestions = suggestions.filter(task =>
-                    !selectedTasks.some(selectedTask => selectedTask.name === task.name)
-                );
-
-                if (availableSuggestions.length === 0) {
-                    hideSuggestions();
-                    return;
-                }
-
-                taskSuggestions.innerHTML = '';
-
-                if (showingAllTasks) {
-                    const headerDiv = document.createElement('div');
-                    headerDiv.style.cssText = 'padding: 8px 15px; background: #f8f9fa; border-bottom: 1px solid #e0e0e0; font-size: 12px; color: #666; font-weight: bold;';
-                    headerDiv.textContent = `Available Tasks (${availableSuggestions.length} remaining)`;
-                    taskSuggestions.appendChild(headerDiv);
-                }
-
-                availableSuggestions.forEach(task => {
-                    const suggestionDiv = document.createElement('div');
-                    suggestionDiv.className = `task-suggestion ${task.exists ? '' : 'new-task'}`;
-                    suggestionDiv.innerHTML = `
-                        <div>
-                            <strong>${task.name}</strong>
-                            ${task.exists ? '' : '<small style="display: block; color: #666;">Create new task</small>'}
-                        </div>
-                    `;
-                    suggestionDiv.addEventListener('click', () => {
-                        addTask(task.name, task.id);
-                    });
-                    taskSuggestions.appendChild(suggestionDiv);
-                });
-
-                taskSuggestions.style.display = 'block';
-            }
-
-            function hideSuggestions() {
-                taskSuggestions.style.display = 'none';
-            }
-
-            function fetchSuggestions(query) {
-                fetch(`/api/tasks/autocomplete/?q=${encodeURIComponent(query)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        showSuggestions(data.tasks, query.length === 0);
-                    })
-                    .catch(error => {
-                        console.error('Error fetching suggestions:', error);
-                        hideSuggestions();
-                    });
-            }
-
-            function fetchAllTasks() {
-                fetchSuggestions('');
-            }
-
-            // Event listeners
-            taskInputWrapper.addEventListener('click', function(e) {
-                if (e.target === this || e.target === selectedTasksContainer) {
-                    tasksInput.focus();
-                }
-            });
-
-            tasksInput.addEventListener('focus', function() {
-                if (this.value.trim() === '') {
-                    fetchAllTasks();
-                }
-            });
-
-            tasksInput.addEventListener('input', function() {
-                clearTimeout(currentTimeout);
-                currentTimeout = setTimeout(() => {
-                    fetchSuggestions(this.value.trim());
-                }, 300);
-            });
-
-            tasksInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const query = this.value.trim();
-                    if (query) {
-                        addTask(query);
-                    }
-                }
-            });
-
-            document.addEventListener('click', function(e) {
-                if (!e.target.closest('.task-input-container')) {
-                    hideSuggestions();
-                }
-            });
-
-            window.removeTaskHandler = function(taskName) {
-                removeTask(taskName);
-            };
+    function renderSelectedTasks() {
+        selectedTasksContainer.innerHTML = '';
+        selectedTasks.forEach(task => {
+            const taskTag = document.createElement('div');
+            taskTag.className = 'task-tag';
+            taskTag.innerHTML = `<span>${task.name}</span><button type="button" class="remove-task" onclick="removeTaskHandler('${task.name}')">×</button>`;
+            selectedTasksContainer.appendChild(taskTag);
         });
-    </script>
-</body>
-</html>
+        tasksInput.placeholder = selectedTasks.length > 0 ? 'Add more tasks...' : 'Click to see all tasks or start typing to search...';
+    }
+
+    function showSuggestions(suggestions, showingAllTasks = false) {
+        if (suggestions.length === 0) { hideSuggestions(); return; }
+        const available = suggestions.filter(task => !selectedTasks.some(s => s.name === task.name));
+        if (available.length === 0) { hideSuggestions(); return; }
+        taskSuggestions.innerHTML = '';
+        if (showingAllTasks) {
+            const hdr = document.createElement('div');
+            hdr.style.cssText = 'padding:8px 15px;background:hsl(var(--muted));border-bottom:1px solid var(--clr-border);font-size:12px;color:var(--clr-muted-fg);font-weight:bold;';
+            hdr.textContent = `Available Tasks (${available.length} remaining)`;
+            taskSuggestions.appendChild(hdr);
+        }
+        available.forEach(task => {
+            const div = document.createElement('div');
+            div.className = `task-suggestion ${task.exists ? '' : 'new-task'}`;
+            div.innerHTML = `<div><strong>${task.name}</strong>${task.exists ? '' : '<small style="display:block;color:var(--clr-muted-fg);">Create new task</small>'}</div>`;
+            div.addEventListener('click', () => addTask(task.name, task.id));
+            taskSuggestions.appendChild(div);
+        });
+        taskSuggestions.style.display = 'block';
+    }
+
+    function hideSuggestions() { taskSuggestions.style.display = 'none'; }
+
+    function fetchSuggestions(query) {
+        fetch(`/api/tasks/autocomplete/?q=${encodeURIComponent(query)}`)
+            .then(r => r.json())
+            .then(data => showSuggestions(data.tasks, query.length === 0))
+            .catch(() => hideSuggestions());
+    }
+
+    taskInputWrapper.addEventListener('click', function(e) {
+        if (e.target === this || e.target === selectedTasksContainer) tasksInput.focus();
+    });
+    tasksInput.addEventListener('focus', function() { if (this.value.trim() === '') fetchSuggestions(''); });
+    tasksInput.addEventListener('input', function() {
+        clearTimeout(currentTimeout);
+        currentTimeout = setTimeout(() => fetchSuggestions(this.value.trim()), 300);
+    });
+    tasksInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); if (this.value.trim()) addTask(this.value.trim()); }
+    });
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.task-input-container')) hideSuggestions();
+    });
+
+    window.removeTaskHandler = function(taskName) { removeTask(taskName); };
+});
+</script>
+{% endblock %}

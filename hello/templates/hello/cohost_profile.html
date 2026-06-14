@@ -1,263 +1,259 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{{ cohost.user_profile.user.get_full_name|default:cohost.user_profile.user.username }} — Co-Host Profile</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; color: #333; }
-        .header { background: linear-gradient(135deg, #FF385C, #E31C3D); color: white; padding: 1rem 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .nav { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
-        .logo { font-size: 24px; font-weight: bold; }
-        .nav-links { display: flex; gap: 20px; align-items: center; }
-        .nav-links a { color: white; text-decoration: none; padding: 8px 16px; border-radius: 20px; transition: background 0.3s; }
-        .nav-links a:hover { background: rgba(255,255,255,0.2); }
+{% extends 'hello/base.html' %}
 
-        .hero {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
-            padding: 60px 20px 80px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-        .hero::before {
-            content: '';
-            position: absolute; inset: 0;
-            background: radial-gradient(ellipse at 60% 0%, rgba(255,56,92,0.18) 0%, transparent 60%);
-        }
-        .avatar-wrap {
-            position: relative;
-            display: inline-block;
-            margin-bottom: 22px;
-        }
-        .avatar-ring {
-            width: 130px; height: 130px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #FF385C, #ff6b35);
-            padding: 4px;
-            display: inline-flex;
-        }
-        .avatar-inner {
-            width: 100%; height: 100%;
-            border-radius: 50%;
-            background: #2a2a4a;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 3.5rem;
-            overflow: hidden;
-        }
-        .avatar-inner img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-        .hero-name { font-size: 2rem; font-weight: 800; color: white; margin-bottom: 6px; position: relative; }
-        .hero-title { color: rgba(255,255,255,0.65); font-size: 1rem; position: relative; }
-        .hero-chips {
-            display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
-            margin-top: 18px; position: relative;
-        }
-        .hero-chip {
-            background: rgba(255,255,255,0.12);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-            padding: 5px 14px;
-            border-radius: 20px;
-            font-size: 0.82rem;
-        }
+{% block title %}{{ cohost.user_profile.user.get_full_name|default:cohost.user_profile.user.username }} — Co-Host Profile{% endblock %}
 
-        .container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
-        .profile-body { display: grid; grid-template-columns: 1fr 320px; gap: 28px; margin-top: -30px; padding-bottom: 60px; }
+{% block extra_css %}
+<style>
+.profile-hero {
+    background: var(--gradient-dark);
+    padding: 4rem 1.25rem 5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+.profile-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 60% 0%, hsl(var(--primary)/0.2) 0%, transparent 60%);
+}
+.avatar-ring {
+    width: 130px; height: 130px; border-radius: 50%;
+    background: var(--gradient-warm); padding: 4px;
+    display: inline-flex; margin-bottom: 1.375rem; position: relative;
+}
+.avatar-inner {
+    width: 100%; height: 100%; border-radius: 50%;
+    background: hsl(220 25% 18%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3.5rem; overflow: hidden;
+}
+.avatar-inner img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.hero-name { font-family: var(--font-display); font-size: 2rem; font-weight: 800; color: white; margin-bottom: 6px; position: relative; }
+.hero-title { color: rgba(255,255,255,0.65); font-size: 1rem; position: relative; }
+.hero-chips { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 1.125rem; position: relative; }
+.hero-chip { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 5px 14px; border-radius: 20px; font-size: 0.82rem; }
 
-        .card { background: white; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); padding: 28px; margin-bottom: 20px; }
-        .card-title { font-size: 1.1rem; font-weight: 700; color: #333; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+.profile-container { max-width: 940px; margin: 0 auto; padding: 0 1.25rem; }
+.profile-body { display: grid; grid-template-columns: 1fr 320px; gap: 1.75rem; margin-top: -30px; padding-bottom: 4rem; }
 
-        .bio-text { color: #555; line-height: 1.7; font-size: 0.97rem; }
+.profile-card { background: white; border-radius: var(--radius-card); box-shadow: var(--shadow-card); border: 1px solid var(--clr-border); padding: 1.75rem; margin-bottom: 1.25rem; }
+.profile-card-title { font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; color: var(--clr-fg); margin-bottom: 1.125rem; display: flex; align-items: center; gap: 8px; }
 
-        .caps-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-        .cap-pill {
-            background: #f0faf4; color: #1a7a40;
-            border: 1px solid #b6e8ca;
-            border-radius: 20px; padding: 5px 14px;
-            font-size: 0.82rem; font-weight: 600;
-        }
+.bio-text { color: var(--clr-muted-fg); line-height: 1.7; font-size: 0.97rem; }
 
-        .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .stat-box { background: #f8f9fa; border-radius: 12px; padding: 16px; text-align: center; }
-        .stat-val { font-size: 1.6rem; font-weight: 800; color: #FF385C; }
-        .stat-lbl { font-size: 0.75rem; color: #888; margin-top: 3px; }
+.caps-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.cap-pill { background: hsl(145 60% 96%); color: hsl(145 60% 28%); border: 1px solid hsl(145 60% 82%); border-radius: 20px; padding: 5px 14px; font-size: 0.82rem; font-weight: 600; }
 
-        .social-links { display: flex; flex-direction: column; gap: 10px; }
-        .social-link {
-            display: flex; align-items: center; gap: 10px;
-            text-decoration: none; color: #444;
-            padding: 10px 14px;
-            border: 1px solid #eee;
-            border-radius: 10px;
-            font-size: 0.88rem;
-            font-weight: 600;
-            transition: all .2s;
-        }
-        .social-link:hover { border-color: #FF385C; color: #FF385C; }
-        .social-link img { width: 20px; height: 20px; border-radius: 4px; }
+.stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.25rem; }
+.stat-box { background: hsl(var(--muted)); border-radius: 12px; padding: 16px; text-align: center; }
+.stat-val { font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; color: var(--clr-primary); }
+.stat-lbl { font-size: 0.75rem; color: var(--clr-muted-fg); margin-top: 3px; }
 
-        .listing-item {
-            display: flex; gap: 14px; align-items: center;
-            padding: 14px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        .listing-item:last-child { border-bottom: none; }
-        .listing-thumb {
-            width: 64px; height: 48px; border-radius: 8px;
-            background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.4rem; flex-shrink: 0; overflow: hidden;
-        }
-        .listing-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
-        .listing-name { font-weight: 600; font-size: 0.9rem; color: #333; margin-bottom: 3px; }
-        .listing-loc { font-size: 0.78rem; color: #999; }
+.social-links { display: flex; flex-direction: column; gap: 10px; }
+.social-link { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--clr-fg); padding: 10px 14px; border: 1px solid var(--clr-border); border-radius: 10px; font-size: 0.88rem; font-weight: 600; transition: all .2s; }
+.social-link:hover { border-color: var(--clr-primary); color: var(--clr-primary); }
+.social-link img { width: 20px; height: 20px; border-radius: 4px; }
 
-        .btn-contact {
-            display: block; width: 100%;
-            background: #FF385C; color: white;
-            border: none; border-radius: 12px;
-            padding: 14px; font-size: 1rem; font-weight: 700;
-            cursor: pointer; text-align: center; text-decoration: none;
-            transition: background .2s, transform .15s;
-            margin-bottom: 10px;
-        }
-        .btn-contact:hover { background: #E31C3D; transform: translateY(-1px); }
-        .btn-back {
-            display: block; width: 100%;
-            background: white; color: #666;
-            border: 1px solid #ddd; border-radius: 12px;
-            padding: 12px; font-size: 0.9rem; font-weight: 600;
-            cursor: pointer; text-align: center; text-decoration: none;
-            transition: all .2s;
-        }
-        .btn-back:hover { border-color: #aaa; color: #333; }
+.listing-item { display: flex; gap: 14px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--clr-border); }
+.listing-item:last-child { border-bottom: none; }
+.listing-thumb { width: 64px; height: 48px; border-radius: 8px; background: hsl(var(--muted)); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; overflow: hidden; }
+.listing-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+.listing-name { font-weight: 600; font-size: 0.9rem; color: var(--clr-fg); margin-bottom: 3px; }
+.listing-loc { font-size: 0.78rem; color: var(--clr-muted-fg); }
 
-        @media (max-width: 768px) {
-            .profile-body { grid-template-columns: 1fr; margin-top: -20px; }
-            .nav { flex-direction: column; gap: 10px; }
-        }
-    </style>
-</head>
-<body>
-    {% include 'hello/_nav.html' %}
+/* Reviews */
+.review-item { padding: 1.125rem 0; border-bottom: 1px solid var(--clr-border); }
+.review-item:last-child { border-bottom: none; }
+.review-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; gap: 6px; }
+.review-author { font-weight: 700; font-size: 0.9rem; color: var(--clr-fg); }
+.review-date { font-size: 0.75rem; color: var(--clr-muted-fg); }
+.review-stars { color: hsl(var(--accent)); font-size: 0.9rem; letter-spacing: 1px; }
+.review-text { font-size: 0.88rem; color: var(--clr-muted-fg); line-height: 1.6; margin-top: 4px; }
+.avg-rating-badge { display: inline-flex; align-items: center; gap: 6px; background: hsl(var(--accent)/0.12); color: hsl(36 80% 30%); border-radius: 20px; padding: 4px 12px; font-size: 0.82rem; font-weight: 700; margin-left: 8px; }
 
-    <div class="hero">
-        <div class="avatar-wrap">
-            <div class="avatar-ring">
-                <div class="avatar-inner">
-                    {% if cohost.user_profile.profile_photo %}
-                        <img src="{{ cohost.user_profile.profile_photo.url }}" alt="">
-                    {% else %}
-                        👤
-                    {% endif %}
-                </div>
+/* Review form */
+.star-radio-group { display: flex; gap: 6px; flex-direction: row-reverse; justify-content: flex-end; margin-bottom: 1rem; }
+.star-radio-group input[type=radio] { display: none; }
+.star-radio-group label { font-size: 1.75rem; color: var(--clr-border); cursor: pointer; transition: color .15s; line-height: 1; }
+.star-radio-group input[type=radio]:checked ~ label,
+.star-radio-group label:hover,
+.star-radio-group label:hover ~ label { color: hsl(var(--accent)); }
+
+@media (max-width: 768px) {
+    .profile-body { grid-template-columns: 1fr; margin-top: -20px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-hero">
+  <div style="position:relative;">
+    <div style="display:inline-block;margin-bottom:1.375rem;">
+      <div class="avatar-ring">
+        <div class="avatar-inner">
+          {% if cohost.user_profile.profile_photo %}
+            <img src="{{ cohost.user_profile.profile_photo.url }}" alt="">
+          {% else %}
+            👤
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="hero-name">{{ cohost.user_profile.user.get_full_name|default:cohost.user_profile.user.username }}</div>
+    <div class="hero-title">Professional Co-Host
+      {% if avg_rating %}<span class="avg-rating-badge">&#9733; {{ avg_rating|floatformat:1 }} ({{ reviews|length }} review{{ reviews|length|pluralize }})</span>{% endif %}
+    </div>
+    <div class="hero-chips">
+      {% if cohost.locations %}<span class="hero-chip">📍 {{ cohost.locations }}</span>{% endif %}
+      {% if cohost.experience_years %}<span class="hero-chip">⭐ {{ cohost.experience_years }} yr{{ cohost.experience_years|pluralize }} experience</span>{% endif %}
+      {% if cohost.hourly_rate %}<span class="hero-chip">💰 ${{ cohost.hourly_rate }}/day</span>{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="profile-container">
+  <div class="profile-body">
+
+    <!-- Left column -->
+    <div>
+      {% if cohost.bio %}
+      <div class="profile-card ds-reveal">
+        <div class="profile-card-title">👋 About</div>
+        <p class="bio-text">{{ cohost.bio }}</p>
+      </div>
+      {% endif %}
+
+      {% with caps=cohost.capabilities.all %}
+      {% if caps %}
+      <div class="profile-card ds-reveal">
+        <div class="profile-card-title">🛠️ Capabilities</div>
+        <div class="caps-grid">
+          {% for cap in caps %}<span class="cap-pill">{{ cap.name }}</span>{% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {% endwith %}
+
+      <!-- Reviews received -->
+      <div class="profile-card ds-reveal">
+        <div class="profile-card-title">
+          &#11088; Reviews
+          {% if avg_rating %}<span class="avg-rating-badge">{{ avg_rating|floatformat:1 }} / 5</span>{% endif %}
+        </div>
+
+        {% if messages %}
+          {% for message in messages %}
+            <div class="ds-alert ds-alert-{{ message.tags }}" style="margin-bottom:1rem;">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+
+        {% if can_review %}
+        <form method="post" action="{% url 'submit_review' review_proposal.id %}" style="margin-bottom:1.5rem;padding:1.125rem;background:hsl(var(--muted));border-radius:.75rem;border:1px solid var(--clr-border);">
+          {% csrf_token %}
+          <p style="font-size:.88rem;font-weight:600;color:var(--clr-fg);margin-bottom:.75rem;">Leave a review for this partnership</p>
+          <div class="star-radio-group">
+            <input type="radio" id="star5" name="rating" value="5" required><label for="star5" title="5 stars">&#9733;</label>
+            <input type="radio" id="star4" name="rating" value="4"><label for="star4" title="4 stars">&#9733;</label>
+            <input type="radio" id="star3" name="rating" value="3"><label for="star3" title="3 stars">&#9733;</label>
+            <input type="radio" id="star2" name="rating" value="2"><label for="star2" title="2 stars">&#9733;</label>
+            <input type="radio" id="star1" name="rating" value="1"><label for="star1" title="1 star">&#9733;</label>
+          </div>
+          <textarea name="comment" class="ds-input" rows="3" placeholder="Share your experience working together..." style="margin-bottom:.75rem;resize:vertical;"></textarea>
+          <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">Submit Review</button>
+        </form>
+        {% elif user_review %}
+        <div style="padding:.875rem;background:hsl(145 60% 97%);border-radius:.75rem;border:1px solid hsl(145 60% 80%);margin-bottom:1rem;font-size:.85rem;color:hsl(145 60% 28%);">
+          &#10003; You reviewed this co-host:
+          <span style="color:hsl(var(--accent));margin-left:4px;">{% for i in "12345" %}{% if forloop.counter <= user_review.rating %}&#9733;{% else %}&#9734;{% endif %}{% endfor %}</span>
+        </div>
+        {% endif %}
+
+        {% if reviews %}
+          {% for review in reviews %}
+          <div class="review-item">
+            <div class="review-header">
+              <span class="review-author">{{ review.reviewer.user.get_full_name|default:review.reviewer.user.username }}</span>
+              <span class="review-date">{{ review.created_at|date:"M d, Y" }}</span>
             </div>
+            <div class="review-stars">{% for i in "12345" %}{% if forloop.counter <= review.rating %}&#9733;{% else %}&#9734;{% endif %}{% endfor %}</div>
+            {% if review.comment %}<p class="review-text">{{ review.comment }}</p>{% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <p style="color:var(--clr-muted-fg);font-size:.88rem;text-align:center;padding:1rem 0;">No reviews yet.</p>
+        {% endif %}
+      </div>
+
+      {% if managed_listings %}
+      <div class="profile-card ds-reveal">
+        <div class="profile-card-title">🏠 Properties Managed</div>
+        {% for proposal in managed_listings %}
+        <div class="listing-item">
+          <div class="listing-thumb">
+            {% if proposal.listing.get_main_photo_url %}
+              <img src="{{ proposal.listing.get_main_photo_url }}" alt="">
+            {% else %}🏠{% endif %}
+          </div>
+          <div>
+            <div class="listing-name">{{ proposal.listing.title|truncatechars:55 }}</div>
+            <div class="listing-loc">📍 {{ proposal.listing.location }}</div>
+          </div>
         </div>
-        <div class="hero-name">{{ cohost.user_profile.user.get_full_name|default:cohost.user_profile.user.username }}</div>
-        <div class="hero-title">Professional Co-Host</div>
-        <div class="hero-chips">
-            {% if cohost.locations %}
-                <span class="hero-chip">📍 {{ cohost.locations }}</span>
-            {% endif %}
-            {% if cohost.experience_years %}
-                <span class="hero-chip">⭐ {{ cohost.experience_years }} yr{{ cohost.experience_years|pluralize }} experience</span>
-            {% endif %}
-            {% if cohost.hourly_rate %}
-                <span class="hero-chip">💰 ${{ cohost.hourly_rate }}/day</span>
-            {% endif %}
-        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
     </div>
 
-    <div class="container">
-        <div class="profile-body">
-
-            <!-- Left column -->
-            <div>
-                {% if cohost.bio %}
-                <div class="card">
-                    <div class="card-title">👋 About</div>
-                    <p class="bio-text">{{ cohost.bio }}</p>
-                </div>
-                {% endif %}
-
-                {% with caps=cohost.capabilities.all %}
-                {% if caps %}
-                <div class="card">
-                    <div class="card-title">🛠️ Capabilities</div>
-                    <div class="caps-grid">
-                        {% for cap in caps %}
-                            <span class="cap-pill">{{ cap.name }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
-                {% endwith %}
-
-                {% if managed_listings %}
-                <div class="card">
-                    <div class="card-title">🏠 Properties Managed</div>
-                    {% for proposal in managed_listings %}
-                    <div class="listing-item">
-                        <div class="listing-thumb">
-                            {% if proposal.listing.get_main_photo_url %}
-                                <img src="{{ proposal.listing.get_main_photo_url }}" alt="">
-                            {% else %}
-                                🏠
-                            {% endif %}
-                        </div>
-                        <div>
-                            <div class="listing-name">{{ proposal.listing.title|truncatechars:55 }}</div>
-                            <div class="listing-loc">📍 {{ proposal.listing.location }}</div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
-            </div>
-
-            <!-- Right column -->
-            <div>
-                <div class="card">
-                    <div class="stat-row" style="margin-bottom: 20px;">
-                        <div class="stat-box">
-                            <div class="stat-val">{{ cohost.experience_years|default:"—" }}</div>
-                            <div class="stat-lbl">Years exp.</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-val">{{ managed_listings|length }}</div>
-                            <div class="stat-lbl">Properties</div>
-                        </div>
-                    </div>
-
-                    {% if user.is_authenticated and user.userprofile.role == 'host' %}
-                        {% if conversation_proposal_id %}
-                            <a href="{% url 'conversation' conversation_proposal_id %}" class="btn-contact">💬 Message</a>
-                        {% elif can_message_directly %}
-                            <a href="{% url 'contact_user' cohost.id %}" class="btn-contact">💬 Message</a>
-                        {% endif %}
-                    {% elif not user.is_authenticated %}
-                        <a href="{% url 'login' %}" class="btn-contact">Login to Contact</a>
-                    {% endif %}
-                    <a href="{% url 'cohosts_marketplace' %}" class="btn-back">← Back to Co-Hosts</a>
-                </div>
-
-                {% if social_links %}
-                <div class="card">
-                    <div class="card-title">🔗 Profiles</div>
-                    <div class="social-links">
-                        {% for link in social_links %}
-                        <a href="{{ link.url }}" target="_blank" rel="noopener" class="social-link">
-                            <img src="https://cdn.simpleicons.org/{{ link.platform }}/FF385C" alt="{{ link.get_platform_display }}"
-                                 onerror="this.style.display='none'">
-                            {{ link.get_platform_display }}
-                        </a>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
-            </div>
-
+    <!-- Right column -->
+    <div>
+      <div class="profile-card ds-reveal">
+        <div class="stat-row">
+          <div class="stat-box">
+            <div class="stat-val">{{ cohost.experience_years|default:"—" }}</div>
+            <div class="stat-lbl">Years exp.</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val">{{ managed_listings|length }}</div>
+            <div class="stat-lbl">Properties</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" style="color:hsl(var(--accent));">{% if avg_rating %}{{ avg_rating|floatformat:1 }}{% else %}—{% endif %}</div>
+            <div class="stat-lbl">Avg. rating</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val">{{ reviews|length }}</div>
+            <div class="stat-lbl">Reviews</div>
+          </div>
         </div>
+
+        {% if user.is_authenticated and user.userprofile.role == 'host' %}
+          {% if conversation_proposal_id %}
+            <a href="{% url 'conversation' conversation_proposal_id %}" class="ds-btn ds-btn-primary" style="width:100%;justify-content:center;margin-bottom:.625rem;">💬 Message</a>
+          {% elif can_message_directly %}
+            <a href="{% url 'contact_user' cohost.id %}" class="ds-btn ds-btn-primary" style="width:100%;justify-content:center;margin-bottom:.625rem;">💬 Message</a>
+          {% endif %}
+        {% elif not user.is_authenticated %}
+          <a href="{% url 'login' %}" class="ds-btn ds-btn-primary" style="width:100%;justify-content:center;margin-bottom:.625rem;">Login to Contact</a>
+        {% endif %}
+        <a href="{% url 'cohosts_marketplace' %}" class="ds-btn ds-btn-muted" style="width:100%;justify-content:center;">← Back to Co-Hosts</a>
+      </div>
+
+      {% if social_links %}
+      <div class="profile-card ds-reveal">
+        <div class="profile-card-title">🔗 Profiles</div>
+        <div class="social-links">
+          {% for link in social_links %}
+          <a href="{{ link.url }}" target="_blank" rel="noopener" class="social-link">
+            <img src="https://cdn.simpleicons.org/{{ link.platform }}/FF385C" alt="{{ link.get_platform_display }}"
+                 onerror="this.style.display='none'">
+            {{ link.get_platform_display }}
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
     </div>
-</body>
-</html>
+
+  </div>
+</div>
+{% endblock %}

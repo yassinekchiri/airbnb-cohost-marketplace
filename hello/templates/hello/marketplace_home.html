@@ -1,321 +1,615 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Co-Host Marketplace - Find Your Perfect Co-Host</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: #f8f9fa; 
-            color: #333; 
-        }
-        .header {
-            background: linear-gradient(135deg, #FF385C, #E31C3D);
-            color: white;
-            padding: 1rem 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .nav {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-        }
-        .nav-links {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-        .nav-links a {
-            color: white;
-            text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            transition: background 0.3s;
-        }
-        .nav-links a:hover {
-            background: rgba(255,255,255,0.2);
-        }
-        .btn-primary {
-            background: white !important;
-            color: #FF385C !important;
-            font-weight: bold;
-        }
-        .hero {
-            text-align: center;
-            padding: 80px 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .hero h1 {
-            font-size: 3rem;
-            margin-bottom: 20px;
-        }
-        .hero p {
-            font-size: 1.2rem;
-            margin-bottom: 30px;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .hero-buttons {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        .btn {
-            padding: 12px 30px;
-            border: none;
-            border-radius: 25px;
-            font-size: 16px;
-            font-weight: bold;
-            text-decoration: none;
-            display: inline-block;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .btn-white {
-            background: white;
-            color: #667eea;
-        }
-        .btn-outline {
-            background: transparent;
-            color: white;
-            border: 2px solid white;
-        }
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-        .section {
-            padding: 60px 0;
-        }
-        .section h2 {
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 50px;
-            color: #333;
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-        }
-        .card {
-            background: white;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-        }
-        .card-image {
-            height: 200px;
-            background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #999;
-            font-size: 40px;
-        }
-        .card img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-        }
-        .card-content {
-            padding: 20px;
-        }
-        .card-title {
-            font-size: 1.3rem;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #333;
-        }
-        .card-meta {
-            color: #666;
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-        }
-        .card-description {
-            color: #555;
-            line-height: 1.5;
-        }
-        .stats {
-            background: #2c3e50;
-            color: white;
-            padding: 60px 0;
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 40px;
-            text-align: center;
-        }
-        .stat-item h3 {
-            font-size: 3rem;
-            margin-bottom: 10px;
-            color: #FF385C;
-        }
-        .stat-item p {
-            font-size: 1.1rem;
-        }
-        .cta {
-            background: #FF385C;
-            color: white;
-            text-align: center;
-            padding: 80px 20px;
-        }
-        .cta h2 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-        }
-        .cta p {
-            font-size: 1.2rem;
-            margin-bottom: 30px;
-        }
-        @media (max-width: 768px) {
-            .hero h1 { font-size: 2rem; }
-            .nav { flex-direction: column; gap: 10px; }
-            .hero-buttons { flex-direction: column; align-items: center; }
-        }
-    </style>
-</head>
-<body>
-    {% include 'hello/_nav.html' %}
+{% extends 'hello/base.html' %}
+{% load static %}
 
-    <section class="hero">
-        <div class="container">
-            <h1>Connect Hosts with Expert Co-Hosts</h1>
-            <p>The ultimate platform where Airbnb hosts find professional co-hosts to manage their properties, and co-hosts discover exciting opportunities.</p>
-            <div class="hero-buttons">
-                <a href="{% url 'register' %}" class="btn btn-white">Get Started</a>
-                <a href="{% url 'listings_marketplace' %}" class="btn btn-outline">Browse Opportunities</a>
-            </div>
+{% block title %}Co-Host Marketplace — Find Your Perfect Co-Host{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Hero ────────────────────────────────────────────────────────── */
+.home-hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding-top: var(--nav-height);
+  overflow: hidden;
+  margin-top: calc(-1 * var(--nav-height));
+}
+.home-hero-bg {
+  position: absolute; inset: 0;
+}
+.home-hero-bg img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.home-hero-overlay-1 {
+  position: absolute; inset: 0;
+  background: hsl(var(--foreground) / 0.60);
+}
+.home-hero-overlay-2 {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, hsl(var(--foreground) / 0.80) 0%, hsl(var(--foreground) / 0.40) 55%, transparent 100%);
+}
+.home-hero-inner {
+  position: relative; z-index: 1;
+  max-width: 80rem; margin: 0 auto;
+  padding: 5rem 1.5rem 3rem;
+}
+.home-hero-badge {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.375rem 1rem; border-radius: 9999px;
+  background: hsl(0 0% 100% / 0.10); backdrop-filter: blur(8px);
+  border: 1px solid hsl(0 0% 100% / 0.20);
+  color: white; font-size: 0.82rem; font-weight: 500; margin-bottom: 1.5rem;
+}
+.home-hero-badge .pulse {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: hsl(var(--accent)); animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+.home-hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.75rem, 7vw, 4.5rem);
+  font-weight: 700; line-height: 1.1;
+  color: white; margin-bottom: 1.5rem;
+}
+.home-hero-subtitle {
+  font-size: 1.15rem; color: hsl(0 0% 100% / 0.80);
+  max-width: 36rem; margin-bottom: 2.5rem; line-height: 1.65;
+}
+.home-hero-ctas { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 4rem; }
+.home-hero-stats { display: flex; flex-wrap: wrap; gap: 2.5rem; }
+.home-hero-stats .stat-val {
+  font-family: var(--font-display); font-size: 1.9rem; font-weight: 700; color: white; display: block;
+}
+.home-hero-stats .stat-lbl { font-size: 0.8rem; color: hsl(0 0% 100% / 0.60); }
+
+/* ── Section shared ──────────────────────────────────────────────── */
+.home-section { padding: 6rem 1.5rem; }
+.home-section-muted { background: hsl(var(--muted) / 0.5); }
+.home-inner { max-width: 80rem; margin: 0 auto; }
+.home-section-hd { text-align: center; margin-bottom: 4rem; }
+.home-section-hd .badge-pill {
+  display: inline-block; padding: 0.35rem 1rem; border-radius: 9999px;
+  font-size: 0.78rem; font-weight: 600; margin-bottom: 1rem;
+}
+.badge-primary { background: hsl(var(--primary)/0.10); color: var(--clr-primary); }
+.badge-host    { background: hsl(var(--host)/0.10);    color: var(--clr-host); }
+.badge-cohost  { background: hsl(var(--cohost)/0.10);  color: var(--clr-cohost); }
+.badge-accent  { background: hsl(var(--accent)/0.12);  color: hsl(36 80% 33%); }
+.home-section-hd h2 {
+  font-family: var(--font-display); font-size: clamp(2rem, 4.5vw, 3.25rem);
+  font-weight: 700; color: var(--clr-fg); margin-bottom: 1rem;
+}
+.home-section-hd p { font-size: 1.05rem; color: var(--clr-muted-fg); max-width: 40rem; margin: 0 auto; }
+
+/* ── How It Works ────────────────────────────────────────────────── */
+.how-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 2rem;
+}
+.how-step { text-align: center; position: relative; }
+.how-step-connector {
+  display: none;
+  position: absolute; top: 2rem; left: 60%; width: 80%;
+  border-top: 2px dashed var(--clr-border);
+}
+@media(min-width:1024px) { .how-step-connector { display: block; } }
+.how-icon {
+  width: 4rem; height: 4rem; border-radius: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; margin: 0 auto 1rem;
+}
+.how-step-num {
+  display: inline-block; font-size: 0.68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--clr-muted-fg); margin-bottom: 0.5rem;
+}
+.how-step h3 { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; color: var(--clr-fg); margin-bottom: 0.5rem; }
+.how-step p  { font-size: 0.88rem; color: var(--clr-muted-fg); line-height: 1.6; }
+
+/* ── For Hosts ───────────────────────────────────────────────────── */
+.for-hosts-grid { display: grid; gap: 4rem; align-items: center; }
+@media(min-width:1024px) { .for-hosts-grid { grid-template-columns: 1fr 1fr; } }
+.feature-list { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
+@media(max-width:640px) { .feature-list { grid-template-columns: 1fr; } }
+.feature-item { display: flex; align-items: flex-start; gap: 0.75rem; }
+.feature-icon {
+  width: 2.5rem; height: 2.5rem; border-radius: 0.75rem; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 1rem;
+  background: hsl(var(--host)/0.10); color: var(--clr-host);
+}
+.feature-item h4 { font-size: 0.88rem; font-weight: 600; color: var(--clr-fg); margin-bottom: 0.15rem; }
+.feature-item p  { font-size: 0.78rem; color: var(--clr-muted-fg); line-height: 1.5; }
+.listing-collage { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.listing-collage img { border-radius: 1rem; box-shadow: var(--shadow-card); width: 100%; object-fit: cover; }
+.collage-stat {
+  border-radius: 1rem; background: white; box-shadow: var(--shadow-card);
+  padding: 1.25rem; border: 1px solid var(--clr-border);
+}
+.collage-stat .dot { width: 8px; height: 8px; border-radius: 50%; background: hsl(var(--accent)); display: inline-block; margin-right: 6px; }
+.collage-stat .stat-num { font-family: var(--font-display); font-size: 1.75rem; font-weight: 700; color: var(--clr-fg); display: block; margin: 0.25rem 0 0.125rem; }
+.collage-stat .stat-desc { font-size: 0.75rem; color: var(--clr-muted-fg); }
+
+/* ── For Co-Hosts (benefit cards) ───────────────────────────────── */
+.benefit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap: 1.5rem; }
+.benefit-card {
+  background: white; border-radius: 1rem; padding: 1.5rem;
+  box-shadow: var(--shadow-card); border: 1px solid var(--clr-border);
+  transition: box-shadow 0.3s, transform 0.3s;
+}
+.benefit-card:hover { box-shadow: var(--shadow-elevated); transform: translateY(-4px); }
+.benefit-icon {
+  width: 3rem; height: 3rem; border-radius: 0.75rem; margin-bottom: 1rem;
+  display: flex; align-items: center; justify-content: center; font-size: 1.25rem;
+  background: hsl(var(--cohost)/0.10); color: var(--clr-cohost);
+  transition: transform 0.3s;
+}
+.benefit-card:hover .benefit-icon { transform: scale(1.1); }
+.benefit-card h3 { font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; color: var(--clr-fg); margin-bottom: 0.5rem; }
+.benefit-card p  { font-size: 0.85rem; color: var(--clr-muted-fg); line-height: 1.6; }
+
+/* ── Testimonials ────────────────────────────────────────────────── */
+.testi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 2rem; }
+.testi-card {
+  background: white; border-radius: 1rem; padding: 2rem;
+  box-shadow: var(--shadow-card); border: 1px solid var(--clr-border);
+}
+.testi-stars { display: flex; gap: 3px; margin-bottom: 1rem; color: hsl(var(--accent)); font-size: 0.9rem; }
+.testi-text { color: var(--clr-fg); margin-bottom: 1.5rem; line-height: 1.65; font-size: 0.95rem; }
+.testi-name { font-size: 0.875rem; font-weight: 600; color: var(--clr-fg); }
+.testi-role { font-size: 0.75rem; color: var(--clr-muted-fg); margin-top: 2px; }
+
+/* ── Listings & Co-Hosts (dynamic) ──────────────────────────────── */
+.listing-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+.cohost-cards  { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+
+/* ── Footer ──────────────────────────────────────────────────────── */
+.home-footer {
+  padding: 3rem 1.5rem 2rem;
+  background: hsl(var(--background));
+  border-top: 1px solid var(--clr-border);
+}
+.footer-inner { max-width: 80rem; margin: 0 auto; }
+.footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 2rem; margin-bottom: 2rem; }
+.footer-logo { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+.footer-logo-icon {
+  width: 1.75rem; height: 1.75rem; border-radius: 0.5rem;
+  background: var(--gradient-warm); display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700; font-size: 0.8rem; color: white;
+}
+.footer-logo span { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--clr-fg); }
+.footer-blurb { font-size: 0.83rem; color: var(--clr-muted-fg); line-height: 1.6; }
+.footer-col h4 { font-size: 0.82rem; font-weight: 600; color: var(--clr-fg); margin-bottom: 0.75rem; }
+.footer-col ul { list-style: none; }
+.footer-col li { margin-bottom: 0.5rem; }
+.footer-col a { font-size: 0.82rem; color: var(--clr-muted-fg); transition: color 0.2s; }
+.footer-col a:hover { color: var(--clr-fg); }
+.footer-copy { border-top: 1px solid var(--clr-border); padding-top: 1.5rem; text-align: center; font-size: 0.8rem; color: var(--clr-muted-fg); }
+
+@media(max-width:768px) {
+  .home-section { padding: 4rem 1rem; }
+  .home-hero h1 { font-size: 2.5rem; }
+  .home-hero-stats { gap: 1.5rem; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ══════════════════════════════════════════════════════════════
+     HERO
+════════════════════════════════════════════════════════════════ -->
+<section class="home-hero ds-anim-hero">
+  <div class="home-hero-bg">
+    <img src="{% static 'hello/hero-property.jpg' %}" alt="Luxury vacation rental">
+    <div class="home-hero-overlay-1"></div>
+    <div class="home-hero-overlay-2"></div>
+  </div>
+
+  <div class="home-hero-inner">
+    <div class="home-hero-badge">
+      <span class="pulse"></span>
+      The #1 Host &amp; Co-Host Marketplace
+    </div>
+
+    <h1>
+      Find your perfect<br>
+      <span class="text-gradient-warm">co-hosting partner</span>
+    </h1>
+
+    <p class="home-hero-subtitle">
+      Connect with experienced co-hosts to manage your Airbnb, Booking.com &amp; Expedia rentals — or offer your hosting skills to property owners worldwide.
+    </p>
+
+    <div class="home-hero-ctas">
+      <a href="{% url 'register' %}" class="ds-btn ds-btn-primary ds-btn-lg" style="font-size:1rem;padding:.9rem 2rem;">
+        I'm a Host &rarr;
+      </a>
+      <a href="{% url 'cohosts_marketplace' %}" class="ds-btn ds-btn-ghost ds-btn-lg" style="font-size:1rem;padding:.9rem 2rem;">
+        I'm a Co-Host &rarr;
+      </a>
+    </div>
+
+    <div class="home-hero-stats ds-anim-stats">
+      <div>
+        <span class="stat-val">{{ listings_count }}+</span>
+        <span class="stat-lbl">Active Listings</span>
+      </div>
+      <div>
+        <span class="stat-val">{{ cohosts_count }}+</span>
+        <span class="stat-lbl">Verified Co-Hosts</span>
+      </div>
+      <div>
+        <span class="stat-val">15,000+</span>
+        <span class="stat-lbl">Properties Managed</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     HOW IT WORKS
+════════════════════════════════════════════════════════════════ -->
+<section class="home-section" id="how-it-works">
+  <div class="home-inner">
+    <div class="home-section-hd ds-reveal">
+      <span class="badge-pill badge-accent">Simple Process</span>
+      <h2>How It Works</h2>
+      <p>Getting started takes less than 5 minutes. Find your perfect hosting partner today.</p>
+    </div>
+
+    <div class="how-grid ds-stagger">
+
+      <div class="how-step ds-reveal">
+        <div class="how-step-connector"></div>
+        <div class="how-icon" style="background:hsl(var(--primary)/0.10);color:var(--clr-primary);">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="12" y1="3" x2="12" y2="3"/></svg>
         </div>
-    </section>
+        <span class="how-step-num">Step 1</span>
+        <h3>Create Your Profile</h3>
+        <p>Sign up as a Host or Co-Host. Tell us about your properties or your hosting expertise.</p>
+      </div>
 
-    <section class="section">
-        <div class="container">
-            <h2>🏠 Latest Listings Looking for Co-Hosts</h2>
-            <div class="grid">
-                {% for listing in listings %}
-                <div class="card">
-                    {% if listing.get_main_photo_url %}
-                        <img src="{{ listing.get_main_photo_url }}" alt="{{ listing.title }}">
-                    {% else %}
-                        <div class="card-image">🏠</div>
-                    {% endif %}
-                    <div class="card-content">
-                        <div class="card-title">{{ listing.title|truncatechars:50 }}</div>
-                        <div class="card-meta">📍 {{ listing.location }} • {{ listing.get_status_display }}</div>
-                        <div class="card-description">
-                            {% if listing.description %}
-                                {{ listing.description|truncatechars:100 }}
-                            {% else %}
-                                Looking for an experienced co-host to help manage this property.
-                            {% endif %}
-                        </div>
-                        <br>
-                        <a href="{% url 'listing_detail' listing.id %}" class="btn btn-outline" style="color: #FF385C; border-color: #FF385C;">View Details</a>
-                    </div>
-                </div>
-                {% empty %}
-                <div style="grid-column: 1/-1; text-align: center; color: #666;">
-                    <h3>No listings yet</h3>
-                    <p>Be the first host to add your property!</p>
-                </div>
-                {% endfor %}
+      <div class="how-step ds-reveal">
+        <div class="how-step-connector"></div>
+        <div class="how-icon" style="background:hsl(var(--host)/0.10);color:var(--clr-host);">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <span class="how-step-num">Step 2</span>
+        <h3>Discover &amp; Connect</h3>
+        <p>Hosts browse verified co-hosts. Co-hosts explore listings. Smart matching finds your ideal partner.</p>
+      </div>
+
+      <div class="how-step ds-reveal">
+        <div class="how-step-connector"></div>
+        <div class="how-icon" style="background:hsl(var(--accent)/0.12);color:hsl(36 80% 38%);">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><polyline points="12 8 8 12 12 16"/><line x1="8" y1="12" x2="22" y2="12"/></svg>
+        </div>
+        <span class="how-step-num">Step 3</span>
+        <h3>Propose a Partnership</h3>
+        <p>Send partnership proposals with terms, revenue split, and responsibilities clearly defined.</p>
+      </div>
+
+      <div class="how-step ds-reveal">
+        <div class="how-icon" style="background:hsl(var(--primary)/0.10);color:var(--clr-primary);">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <span class="how-step-num">Step 4</span>
+        <h3>Grow Together</h3>
+        <p>Manage your properties as a team. Scale your rental business with the perfect co-host.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     FOR HOSTS
+════════════════════════════════════════════════════════════════ -->
+<section class="home-section home-section-muted" id="for-hosts">
+  <div class="home-inner">
+    <div class="for-hosts-grid">
+
+      <!-- Left: text + features -->
+      <div class="ds-reveal">
+        <span class="badge-pill badge-host" style="margin-bottom:1rem;display:inline-block;">For Hosts</span>
+        <h2 style="font-family:var(--font-display);font-size:clamp(1.75rem,4vw,2.75rem);font-weight:700;color:var(--clr-fg);margin-bottom:1.25rem;line-height:1.15;">
+          Scale your rentals with a trusted co-host
+        </h2>
+        <p style="font-size:1.05rem;color:var(--clr-muted-fg);margin-bottom:2rem;line-height:1.65;">
+          Stop doing everything alone. Find experienced co-hosts who handle guest communication, cleaning coordination, and more — so you can grow your portfolio.
+        </p>
+
+        <div class="feature-list">
+          <div class="feature-item">
+            <div class="feature-icon">&#127968;</div>
+            <div><h4>Import Listings</h4><p>Paste your Airbnb URL and we extract all details automatically.</p></div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">&#128101;</div>
+            <div><h4>Find Co-Hosts</h4><p>Browse verified co-hosts with experience and expertise.</p></div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">&#128172;</div>
+            <div><h4>Direct Messaging</h4><p>Chat with potential co-hosts and negotiate terms securely.</p></div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">&#128200;</div>
+            <div><h4>Revenue Split</h4><p>Define clear partnership terms and revenue sharing agreements.</p></div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">&#9989;</div>
+            <div><h4>Verified Profiles</h4><p>Every co-host profile includes experience and location details.</p></div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">&#127758;</div>
+            <div><h4>Multi-Platform</h4><p>Manage listings from multiple platforms in one dashboard.</p></div>
+          </div>
+        </div>
+
+        <a href="{% url 'host_dashboard' %}" class="ds-btn ds-btn-primary">List Your Properties</a>
+      </div>
+
+      <!-- Right: image collage -->
+      <div class="ds-reveal">
+        <div class="listing-collage">
+          <div style="display:flex;flex-direction:column;gap:1rem;">
+            <img src="{% static 'hello/listing-1.jpg' %}" alt="Apartment listing" style="height:12rem;">
+            <img src="{% static 'hello/listing-2.jpg' %}" alt="Beach listing" style="height:16rem;">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:1rem;padding-top:2rem;">
+            <img src="{% static 'hello/listing-3.jpg' %}" alt="Cabin listing" style="height:16rem;">
+            <div class="collage-stat">
+              <div style="display:flex;align-items:center;margin-bottom:0.5rem;">
+                <span class="dot"></span>
+                <span style="font-size:0.75rem;color:var(--clr-muted-fg);font-weight:500;">Active Partnerships</span>
+              </div>
+              <span class="stat-num">+47%</span>
+              <span class="stat-desc">Revenue increase with co-hosts</span>
             </div>
-            {% if listings %}
-            <div style="text-align: center; margin-top: 40px;">
-                <a href="{% url 'listings_marketplace' %}" class="btn btn-outline" style="color: #FF385C; border-color: #FF385C;">View All Listings</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dynamic: latest listings -->
+    {% if listings %}
+    <div style="margin-top:4rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+        <h3 style="font-family:var(--font-display);font-size:1.4rem;color:var(--clr-fg);">Latest Listings</h3>
+        <a href="{% url 'listings_marketplace' %}" class="ds-btn ds-btn-outline ds-btn-sm">View All</a>
+      </div>
+      <div class="listing-cards ds-stagger">
+        {% for listing in listings %}
+        <div class="ds-card ds-reveal">
+          {% if listing.get_main_photo_url %}
+            <img src="{{ listing.get_main_photo_url }}" alt="{{ listing.title }}" style="width:100%;height:190px;object-fit:cover;">
+          {% else %}
+            <div style="height:190px;background:var(--clr-muted);display:flex;align-items:center;justify-content:center;font-size:2.5rem;">&#127968;</div>
+          {% endif %}
+          <div style="padding:1.25rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+              <span class="ds-status ds-status-{{ listing.status }}">{{ listing.get_status_display }}</span>
             </div>
+            <h3 style="font-size:1rem;margin-bottom:0.375rem;color:var(--clr-fg);">{{ listing.title|truncatechars:50 }}</h3>
+            <p style="font-size:0.82rem;color:var(--clr-muted-fg);margin-bottom:0.75rem;">&#128205; {{ listing.location }}</p>
+            {% with needed=listing.tasks_needed.all %}
+              {% if needed %}
+              <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:0.75rem;">
+                {% for task in needed|slice:":3" %}<span class="ds-chip ds-chip-green">{{ task.name }}</span>{% endfor %}
+                {% if needed|length > 3 %}<span style="font-size:.72rem;color:var(--clr-muted-fg);align-self:center;">+{{ needed|length|add:"-3" }}</span>{% endif %}
+              </div>
+              {% endif %}
+            {% endwith %}
+            <p style="font-size:0.85rem;color:var(--clr-muted-fg);margin-bottom:1rem;line-height:1.5;">
+              {% if listing.description %}{{ listing.description|truncatechars:90 }}{% else %}Looking for an experienced co-host to help manage this property.{% endif %}
+            </p>
+            <a href="{% url 'listing_detail' listing.id %}" class="ds-btn ds-btn-outline ds-btn-sm">View Details</a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     FOR CO-HOSTS
+════════════════════════════════════════════════════════════════ -->
+<section class="home-section" id="for-cohosts">
+  <div class="home-inner">
+    <div class="home-section-hd ds-reveal">
+      <span class="badge-pill badge-cohost">For Co-Hosts</span>
+      <h2>Turn your hosting skills into income</h2>
+      <p>You're great at managing rentals. Now get paid for it. Partner with property owners and build a thriving co-hosting business.</p>
+    </div>
+
+    <div class="benefit-grid ds-stagger">
+      <div class="benefit-card ds-reveal">
+        <div class="benefit-icon">&#128205;</div>
+        <h3>Browse Listings</h3>
+        <p>Explore thousands of properties looking for co-hosting support across every major platform.</p>
+      </div>
+      <div class="benefit-card ds-reveal">
+        <div class="benefit-icon">&#11088;</div>
+        <h3>Build Your Reputation</h3>
+        <p>Earn reviews and ratings to attract more hosting opportunities from property owners.</p>
+      </div>
+      <div class="benefit-card ds-reveal">
+        <div class="benefit-icon">&#128188;</div>
+        <h3>Offer Your Services</h3>
+        <p>Create service packages — cleaning, guest support, pricing optimization, and more.</p>
+      </div>
+      <div class="benefit-card ds-reveal">
+        <div class="benefit-icon">&#128200;</div>
+        <h3>Earn More</h3>
+        <p>Grow your income with revenue-share partnerships on multiple properties simultaneously.</p>
+      </div>
+      <div class="benefit-card ds-reveal">
+        <div class="benefit-icon">&#128336;</div>
+        <h3>Flexible Schedule</h3>
+        <p>Choose how many properties to co-host based on your availability and preferences.</p>
+      </div>
+      <div class="benefit-card ds-reveal">
+        <div class="benefit-icon">&#127942;</div>
+        <h3>Get Recognized</h3>
+        <p>Build a standout profile with your capabilities, locations, and experience years.</p>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:3rem;" class="ds-reveal">
+      <a href="{% url 'register' %}" class="ds-btn ds-btn-primary ds-btn-lg">Start Co-Hosting Today</a>
+    </div>
+
+    <!-- Dynamic: featured co-hosts -->
+    {% if cohosts %}
+    <div style="margin-top:4rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+        <h3 style="font-family:var(--font-display);font-size:1.4rem;color:var(--clr-fg);">Featured Co-Hosts</h3>
+        <a href="{% url 'cohosts_marketplace' %}" class="ds-btn ds-btn-outline ds-btn-sm">View All</a>
+      </div>
+      <div class="cohost-cards ds-stagger">
+        {% for cohost in cohosts %}
+        <div class="ds-card ds-reveal">
+          <div style="padding:1.5rem;text-align:center;background:var(--gradient-dark);">
+            {% if cohost.user_profile.profile_photo %}
+              <img src="{{ cohost.user_profile.profile_photo.url }}" alt="" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.3);margin:0 auto 0.875rem;">
+            {% else %}
+              <div style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.15);border:3px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 0.875rem;">&#128100;</div>
             {% endif %}
+            <h3 style="color:white;font-size:1.05rem;margin-bottom:0.25rem;">{{ cohost.user_profile.user.get_full_name|default:cohost.user_profile.user.username }}</h3>
+            <span style="color:rgba(255,255,255,0.6);font-size:0.8rem;">Professional Co-Host</span>
+          </div>
+          <div style="padding:1.25rem;">
+            <p style="font-size:0.82rem;color:var(--clr-muted-fg);margin-bottom:0.5rem;">
+              &#128205; {{ cohost.locations|truncatechars:30 }} &bull; {{ cohost.experience_years }} yr{% if cohost.experience_years != 1 %}s{% endif %} exp
+            </p>
+            <p style="font-size:0.875rem;color:var(--clr-muted-fg);line-height:1.5;">
+              {% if cohost.user_profile.bio %}{{ cohost.user_profile.bio|truncatechars:100 }}{% else %}Professional co-host ready to help manage your property.{% endif %}
+            </p>
+          </div>
         </div>
-    </section>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
 
-    <section class="stats">
-        <div class="container">
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <h3>{{ listings|length }}+</h3>
-                    <p>Active Listings</p>
-                </div>
-                <div class="stat-item">
-                    <h3>{{ cohosts|length }}+</h3>
-                    <p>Professional Co-Hosts</p>
-                </div>
-                <div class="stat-item">
-                    <h3>100%</h3>
-                    <p>Success Rate</p>
-                </div>
-                <div class="stat-item">
-                    <h3>24/7</h3>
-                    <p>Platform Support</p>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <section class="section">
-        <div class="container">
-            <h2>👥 Featured Co-Hosts</h2>
-            <div class="grid">
-                {% for cohost in cohosts %}
-                <div class="card">
-                    <div class="card-image">👤</div>
-                    <div class="card-content">
-                        <div class="card-title">{{ cohost.user_profile.user.get_full_name|default:cohost.user_profile.user.username }}</div>
-                        <div class="card-meta">
-                            📍 {{ cohost.locations|truncatechars:30 }} • 
-                            {{ cohost.experience_years }} years experience
-                        </div>
-                        <div class="card-description">
-                            {% if cohost.bio %}
-                                {{ cohost.bio|truncatechars:100 }}
-                            {% else %}
-                                Professional co-host ready to help manage your property.
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                {% empty %}
-                <div style="grid-column: 1/-1; text-align: center; color: #666;">
-                    <h3>No co-hosts yet</h3>
-                    <p>Be the first co-host to join our platform!</p>
-                </div>
-                {% endfor %}
-            </div>
-            {% if cohosts %}
-            <div style="text-align: center; margin-top: 40px;">
-                <a href="{% url 'cohosts_marketplace' %}" class="btn btn-outline" style="color: #FF385C; border-color: #FF385C;">View All Co-Hosts</a>
-            </div>
-            {% endif %}
-        </div>
-    </section>
+<!-- ══════════════════════════════════════════════════════════════
+     TESTIMONIALS
+════════════════════════════════════════════════════════════════ -->
+<section class="home-section home-section-muted" id="testimonials">
+  <div class="home-inner">
+    <div class="home-section-hd ds-reveal">
+      <span class="badge-pill badge-primary">Testimonials</span>
+      <h2>Loved by hosts &amp; co-hosts</h2>
+    </div>
 
-    <section class="cta">
-        <div class="container">
-            <h2>Ready to Get Started?</h2>
-            <p>Join thousands of hosts and co-hosts already using our platform</p>
-            <a href="{% url 'register' %}" class="btn btn-white">Join the Marketplace</a>
+    <div class="testi-grid ds-stagger">
+      <div class="testi-card ds-reveal">
+        <div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p class="testi-text">"CoHostr helped me find an amazing co-host who handles all guest communications. My revenue is up 40% and I finally have my weekends back."</p>
+        <p class="testi-name">Sarah M.</p>
+        <p class="testi-role">Host &middot; 12 properties</p>
+      </div>
+      <div class="testi-card ds-reveal">
+        <div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p class="testi-text">"I went from managing 2 of my own Airbnbs to co-hosting 8 properties. The platform made it incredibly easy to connect with hosts who need help."</p>
+        <p class="testi-name">David K.</p>
+        <p class="testi-role">Co-Host &middot; 8 partnerships</p>
+      </div>
+      <div class="testi-card ds-reveal">
+        <div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p class="testi-text">"The verification system gave me confidence to trust someone with my properties. My co-host is phenomenal — guests love her personal touch."</p>
+        <p class="testi-name">Maria L.</p>
+        <p class="testi-role">Host &middot; 5 properties</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     CTA
+════════════════════════════════════════════════════════════════ -->
+<section class="home-section" style="background:var(--gradient-dark);" id="cta">
+  <div class="home-inner" style="text-align:center;">
+    <div class="ds-reveal">
+      <h2 style="font-family:var(--font-display);font-size:clamp(2rem,4.5vw,3.25rem);font-weight:700;color:white;margin-bottom:1.25rem;">
+        Ready to grow your rental business?
+      </h2>
+      <p style="font-size:1.05rem;color:hsl(0 0% 100% / 0.70);margin-bottom:2.5rem;max-width:36rem;margin-left:auto;margin-right:auto;">
+        Join thousands of hosts and co-hosts already building profitable partnerships on CoHostr.
+      </p>
+      <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+        <a href="{% url 'register' %}" class="ds-btn ds-btn-primary ds-btn-lg" style="font-size:1rem;padding:.9rem 2rem;">
+          I'm a Host &rarr;
+        </a>
+        <a href="{% url 'cohosts_marketplace' %}" class="ds-btn ds-btn-ghost ds-btn-lg" style="font-size:1rem;padding:.9rem 2rem;">
+          I'm a Co-Host &rarr;
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════════════════════════════ -->
+<footer class="home-footer">
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-logo">
+          <div class="footer-logo-icon">C</div>
+          <span>CoHostr</span>
         </div>
-    </section>
-</body>
-</html>
+        <p class="footer-blurb">Connecting hosts and co-hosts for better short-term rental management.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="#for-hosts">For Hosts</a></li>
+          <li><a href="#for-cohosts">For Co-Hosts</a></li>
+          <li><a href="{% url 'listings_marketplace' %}">Browse Listings</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Platform</h4>
+        <ul>
+          <li><a href="{% url 'register' %}">Sign Up</a></li>
+          <li><a href="{% url 'login' %}">Log In</a></li>
+          <li><a href="{% url 'cohosts_marketplace' %}">Co-Hosts</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#">Privacy</a></li>
+          <li><a href="#">Terms</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-copy">&copy; 2026 CoHostr. All rights reserved.</div>
+  </div>
+</footer>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// IntersectionObserver for ds-reveal animations
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.12 });
+document.querySelectorAll('.ds-reveal').forEach(el => observer.observe(el));
+</script>
+{% endblock %}

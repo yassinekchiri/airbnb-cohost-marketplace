@@ -12,6 +12,8 @@ urlpatterns = [
     path('cohosts/', views.cohosts_marketplace, name='cohosts_marketplace'),
     path('listing/<int:listing_id>/', views.listing_detail, name='listing_detail'),
     path('cohost/<int:cohost_id>/', views.cohost_profile, name='cohost_profile'),
+    path('host/<int:host_id>/', views.host_profile, name='host_profile'),
+    path('review/submit/<int:proposal_id>/', views.submit_review, name='submit_review'),
     
     # Authentication
     path('register/', views.register, name='register'),
@@ -36,6 +38,7 @@ urlpatterns = [
     path('proposal/<int:proposal_id>/decline/', views.decline_proposal, name='decline_proposal'),
     path('proposal/<int:proposal_id>/withdraw/', views.withdraw_proposal, name='withdraw_proposal'),
     path('proposal/<int:proposal_id>/end-partnership/', views.end_partnership, name='end_partnership'),
+    path('proposal/<int:proposal_id>/leave-partnership/', views.cohost_end_partnership, name='cohost_end_partnership'),
     path('proposal/<int:proposal_id>/accept-request/', views.accept_partnership_request, name='accept_partnership_request'),
     path('proposal/<int:proposal_id>/decline-request/', views.decline_partnership_request, name='decline_partnership_request'),
     path('cohost/<int:cohost_id>/request-partnership/', views.send_partnership_request, name='send_partnership_request'),

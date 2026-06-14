@@ -268,6 +268,24 @@ class DirectMessage(models.Model):
         return f"DM from {self.sender.username} at {self.created_at:%Y-%m-%d %H:%M}"
 
 
+class Review(models.Model):
+    RATING_CHOICES = [(i, str(i)) for i in range(1, 6)]
+
+    reviewer   = models.ForeignKey('UserProfile', on_delete=models.CASCADE, related_name='reviews_given')
+    reviewee   = models.ForeignKey('UserProfile', on_delete=models.CASCADE, related_name='reviews_received')
+    proposal   = models.ForeignKey('Proposal', on_delete=models.CASCADE, related_name='reviews')
+    rating     = models.PositiveSmallIntegerField(choices=RATING_CHOICES)
+    comment    = models.TextField(max_length=1000, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('reviewer', 'proposal')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.reviewer} → {self.reviewee} ({self.rating}★)"
+
+
 class UserSocialLink(models.Model):
     PLATFORM_CHOICES = [
         ('airbnb',      'Airbnb'),

@@ -1,1040 +1,566 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Edit Profile - Co-Host Marketplace</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f8f9fa;
-            color: #333;
-        }
-        .header {
-            background: linear-gradient(135deg, #FF385C, #E31C3D);
-            color: white;
-            padding: 1rem 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .nav {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .logo { font-size: 24px; font-weight: bold; }
-        .nav-links { display: flex; gap: 20px; align-items: center; }
-        .nav-links a {
-            color: white;
-            text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            transition: background 0.3s;
-        }
-        .nav-links a:hover { background: rgba(255,255,255,0.2); }
-        .container {
-            max-width: 700px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
-        .page-title {
-            font-size: 2rem;
-            font-weight: bold;
-            margin-bottom: 8px;
-            color: #333;
-        }
-        .page-subtitle {
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 1rem;
-        }
-        .card {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-            margin-bottom: 25px;
-        }
-        .card-title {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #f0f0f0;
-            color: #333;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 6px;
-            color: #444;
-            font-size: 0.95rem;
-        }
-        .form-control {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1.5px solid #ddd;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            background: #fafafa;
-        }
-        .form-control:focus {
-            outline: none;
-            border-color: #FF385C;
-            box-shadow: 0 0 0 3px rgba(255, 56, 92, 0.1);
-            background: white;
-        }
-        textarea.form-control { resize: vertical; min-height: 100px; }
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-        .error-text {
-            color: #dc3545;
-            font-size: 0.85rem;
-            margin-top: 4px;
-        }
-        .help-text {
-            color: #888;
-            font-size: 0.82rem;
-            margin-top: 4px;
-        }
-        .btn {
-            padding: 12px 28px;
-            border: none;
-            border-radius: 25px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            transition: all 0.3s;
-        }
-        .btn-save {
-            background: #FF385C;
-            color: white;
-        }
-        .btn-save:hover {
-            background: #E31C3D;
-            transform: translateY(-1px);
-        }
-        .btn-cancel {
-            background: #f0f0f0;
-            color: #555;
-            margin-left: 12px;
-        }
-        .btn-cancel:hover {
-            background: #e0e0e0;
-        }
-        .actions {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
-        .alert {
-            padding: 14px 18px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 0.95rem;
-        }
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .role-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 15px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .role-host { background: #FF385C22; color: #FF385C; }
-        .role-cohost { background: #28a74522; color: #28a745; }
-        @media (max-width: 600px) {
-            .form-row { grid-template-columns: 1fr; }
-            .nav { flex-direction: column; gap: 10px; }
-        }
+{% extends 'hello/base.html' %}
 
-        /* Task tag styles (capabilities) */
-        .task-input-wrapper {
-            border: 1.5px solid #ddd;
-            border-radius: 8px;
-            padding: 8px;
-            min-height: 48px;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 6px;
-            background: #fafafa;
-            cursor: text;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        .task-input-wrapper:focus-within {
-            border-color: #FF385C;
-            box-shadow: 0 0 0 3px rgba(255,56,92,0.1);
-            background: white;
-        }
-        .task-input-wrapper input {
-            border: none;
-            outline: none;
-            flex: 1;
-            min-width: 140px;
-            padding: 4px;
-            font-size: 0.9rem;
-            background: transparent;
-        }
-        .task-tag {
-            background: #28a745;
-            color: white;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.82rem;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            flex-shrink: 0;
-        }
-        .task-tag .remove-task {
-            background: rgba(255,255,255,0.3);
-            border: none;
-            color: white;
-            border-radius: 50%;
-            width: 15px;
-            height: 15px;
-            font-size: 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            line-height: 1;
-            flex-shrink: 0;
-        }
-        .task-tag .remove-task:hover { background: rgba(255,255,255,0.5); }
-        .task-input-container { position: relative; }
-        .task-suggestions {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-top: none;
-            border-radius: 0 0 10px 10px;
-            max-height: 220px;
-            overflow-y: auto;
-            z-index: 500;
-            display: none;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-        }
-        .task-suggestion {
-            padding: 10px 14px;
-            cursor: pointer;
-            border-bottom: 1px solid #f5f5f5;
-            font-size: 0.9rem;
-            transition: background 0.15s;
-        }
-        .task-suggestion:last-child { border-bottom: none; }
-        .task-suggestion:hover { background: #f8f9fa; }
-        .task-suggestion.new-task { background: #f0fff4; border-left: 3px solid #28a745; }
-        .task-suggestion.new-task:hover { background: #e6ffed; }
+{% block title %}Edit Profile — Co-Host Marketplace{% endblock %}
 
-        /* Hide the raw file input */
-        #id_profile_photo { display: none; }
+{% block extra_css %}
+<style>
+.role-badge { display: inline-block; padding: 4px 12px; border-radius: 15px; font-size: .8rem; font-weight: bold; text-transform: uppercase; letter-spacing: .5px; }
+.role-host   { background: hsl(var(--primary)/0.12); color: var(--clr-primary); }
+.role-cohost { background: hsl(145 60% 42%/0.12); color: hsl(145 60% 35%); }
 
-        /* Social links */
-        .link-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 12px;
-            position: relative;
-        }
-        .platform-badge-btn {
-            flex-shrink: 0;
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.15s, box-shadow 0.15s;
-            position: relative;
-        }
-        .platform-badge-btn:hover {
-            transform: scale(1.08);
-            box-shadow: 0 4px 14px rgba(0,0,0,0.22);
-        }
-        .platform-badge-btn svg { width: 20px; height: 20px; color: white; display: block; }
-        .platform-badge-btn img { width: 22px; height: 22px; display: block; }
-        .link-url-input {
-            flex: 1;
-            padding: 10px 14px;
-            border: 1.5px solid #e0e0e0;
-            border-left-width: 4px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            background: #fafafa;
-            transition: box-shadow 0.2s, background 0.2s;
-        }
-        .link-url-input:focus { outline: none; box-shadow: 0 0 0 3px rgba(0,0,0,0.05); background: white; }
-        .link-remove-btn {
-            flex-shrink: 0;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            border: none;
-            background: #f0f0f0;
-            color: #bbb;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.18s, color 0.18s;
-        }
-        .link-remove-btn:hover { background: #fde8eb; color: #FF385C; }
-        /* Platform picker dropdown */
-        .platform-picker {
-            position: absolute;
-            top: calc(100% + 8px);
-            left: 0;
-            background: white;
-            border-radius: 16px;
-            padding: 10px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.16);
-            z-index: 300;
-            display: none;
-            grid-template-columns: 1fr 1fr;
-            gap: 5px;
-            width: 270px;
-        }
-        .platform-picker.open { display: grid; animation: pickerIn 0.18s ease; }
-        @keyframes pickerIn { from { opacity:0; transform: translateY(-6px) scale(.97); } to { opacity:1; transform: none; } }
-        .platform-option {
-            display: flex;
-            align-items: center;
-            gap: 9px;
-            padding: 9px 10px;
-            border-radius: 10px;
-            cursor: pointer;
-            border: none;
-            background: none;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #333;
-            width: 100%;
-            text-align: left;
-            transition: background 0.14s;
-        }
-        .platform-option:hover { background: #f5f5f5; }
-        .platform-option.active { background: #f0f0f0; }
-        .platform-option-icon {
-            width: 28px;
-            height: 28px;
-            border-radius: 7px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        .platform-option-icon svg { width: 14px; height: 14px; color: white; display: block; }
-        .platform-option-icon img { width: 16px; height: 16px; display: block; }
-        #add-link-btn:hover { border-color: #FF385C; color: #FF385C; }
+/* Task tag styles */
+.task-input-wrapper { border: 1.5px solid var(--clr-border); border-radius: 10px; padding: 8px; min-height: 48px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; background: hsl(var(--muted)); cursor: text; transition: border-color .2s; }
+.task-input-wrapper:focus-within { border-color: var(--clr-primary); background: white; }
+.task-input-wrapper input { border: none; outline: none; flex: 1; min-width: 140px; padding: 4px; font-size: .9rem; font-family: var(--font-body); background: transparent; }
+.task-tag { background: hsl(145 60% 42%); color: white; padding: 4px 10px; border-radius: 20px; font-size: .82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.task-tag .remove-task { background: rgba(255,255,255,.3); border: none; color: white; border-radius: 50%; width: 15px; height: 15px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; flex-shrink: 0; }
+.task-tag .remove-task:hover { background: rgba(255,255,255,.5); }
+.task-input-container { position: relative; }
+.task-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid var(--clr-border); border-top: none; border-radius: 0 0 10px 10px; max-height: 220px; overflow-y: auto; z-index: 500; display: none; box-shadow: var(--shadow-elevated); }
+.task-suggestion { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--clr-border); font-size: .9rem; transition: background .15s; }
+.task-suggestion:last-child { border-bottom: none; }
+.task-suggestion:hover { background: hsl(var(--muted)); }
+.task-suggestion.new-task { background: hsl(145 60% 97%); border-left: 3px solid hsl(145 60% 42%); }
+.task-suggestion.new-task:hover { background: hsl(145 60% 93%); }
 
-        /* Photo popup */
-        .photo-backdrop {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(4px);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-        .photo-backdrop.open { display: flex; }
-        .photo-popup {
-            background: white;
-            border-radius: 20px;
-            padding: 32px 28px 24px;
-            width: 320px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-            transform: scale(0.9);
-            opacity: 0;
-            transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), opacity 0.2s;
-            text-align: center;
-        }
-        .photo-backdrop.open .photo-popup {
-            transform: scale(1);
-            opacity: 1;
-        }
-        .popup-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #222;
-            margin-bottom: 6px;
-        }
-        .popup-sub {
-            font-size: 0.82rem;
-            color: #aaa;
-            margin-bottom: 24px;
-        }
-        .popup-btn {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            width: 100%;
-            padding: 14px 18px;
-            border-radius: 12px;
-            border: none;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.18s, transform 0.15s;
-            margin-bottom: 10px;
-            text-align: left;
-        }
-        .popup-btn:active { transform: scale(0.97); }
-        .popup-btn-upload {
-            background: #FF385C;
-            color: white;
-        }
-        .popup-btn-upload:hover { background: #E31C3D; }
-        .popup-btn-remove {
-            background: #f5f5f5;
-            color: #555;
-        }
-        .popup-btn-remove:hover { background: #ebebeb; }
-        .popup-btn-remove.disabled { opacity: 0.4; pointer-events: none; }
-        .popup-close {
-            position: absolute;
-            top: 14px;
-            right: 18px;
-            background: none;
-            border: none;
-            font-size: 1.4rem;
-            color: #aaa;
-            cursor: pointer;
-            line-height: 1;
-            padding: 4px;
-        }
-        .popup-close:hover { color: #555; }
-        .popup-inner { position: relative; }
-        .popup-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            font-size: 1.2rem;
-        }
-    </style>
-</head>
-<body>
-    {% include 'hello/_nav.html' %}
+/* Hide raw file input */
+#id_profile_photo { display: none; }
 
-    <div class="container">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
+/* Social links */
+.link-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; position: relative; }
+.platform-badge-btn { flex-shrink: 0; width: 44px; height: 44px; border-radius: 12px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform .15s, box-shadow .15s; position: relative; }
+.platform-badge-btn:hover { transform: scale(1.08); box-shadow: var(--shadow-card); }
+.platform-badge-btn svg { width: 20px; height: 20px; color: white; display: block; }
+.platform-badge-btn img { width: 22px; height: 22px; display: block; }
+.link-url-input { flex: 1; padding: 10px 14px; border: 1.5px solid var(--clr-border); border-left-width: 4px; border-radius: 8px; font-size: .9rem; background: hsl(var(--muted)); transition: box-shadow .2s, background .2s; font-family: var(--font-body); outline: none; }
+.link-url-input:focus { box-shadow: 0 0 0 3px hsl(var(--primary)/0.1); background: white; }
+.link-remove-btn { flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; border: none; background: hsl(var(--muted)); color: var(--clr-muted-fg); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .18s, color .18s; }
+.link-remove-btn:hover { background: hsl(var(--primary)/0.1); color: var(--clr-primary); }
 
-        <div class="page-title">Edit Profile</div>
-        <p class="page-subtitle">
-            Keep your profile up to date so
-            {% if role == 'host' %}co-hosts{% else %}hosts{% endif %}
-            can find and trust you.
-            <span class="role-badge role-{{ role }}">{{ role|title }}</span>
-        </p>
+/* Platform picker */
+.platform-picker { position: absolute; top: calc(100% + 8px); left: 0; background: white; border-radius: 16px; padding: 10px; box-shadow: var(--shadow-elevated); z-index: 300; display: none; grid-template-columns: 1fr 1fr; gap: 5px; width: 270px; border: 1px solid var(--clr-border); }
+.platform-picker.open { display: grid; animation: pickerIn .18s ease; }
+@keyframes pickerIn { from { opacity:0; transform: translateY(-6px) scale(.97); } to { opacity:1; transform: none; } }
+.platform-option { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 10px; cursor: pointer; border: none; background: none; font-size: .85rem; font-weight: 600; color: var(--clr-fg); width: 100%; text-align: left; transition: background .14s; }
+.platform-option:hover { background: hsl(var(--muted)); }
+.platform-option.active { background: hsl(var(--muted)); }
+.platform-option-icon { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.platform-option-icon svg { width: 14px; height: 14px; color: white; display: block; }
+.platform-option-icon img { width: 16px; height: 16px; display: block; }
 
-        <!-- Avatar (outside form cards, centred) -->
-        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 32px;">
-            <div id="avatar-trigger" title="Change photo" style="position: relative; width: 120px; height: 120px; cursor: pointer;">
-                {% if request.user.userprofile.profile_photo %}
-                    <img id="avatar-img"
-                         src="{{ request.user.userprofile.profile_photo.url }}"
-                         alt="Profile photo"
-                         style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: 0 4px 20px rgba(255,56,92,0.35);">
-                {% else %}
-                    <div id="avatar-initials"
-                         style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, #FF385C, #E31C3D); display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: bold; color: white; border: 4px solid white; box-shadow: 0 4px 20px rgba(255,56,92,0.35);">
-                        {{ request.user.first_name|slice:":1"|upper|default:request.user.username|slice:":1"|upper }}
-                    </div>
-                    <img id="avatar-img" src="" alt="Preview"
-                         style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: 0 4px 20px rgba(255,56,92,0.35); display: none; position: absolute; top: 0; left: 0;">
-                {% endif %}
-                <!-- Camera overlay on hover -->
-                <div id="avatar-overlay"
-                     style="position: absolute; inset: 0; border-radius: 50%; background: rgba(0,0,0,0.45); display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; color: white; gap: 4px;">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                        <circle cx="12" cy="13" r="4"/>
-                    </svg>
-                    <span style="font-size: 0.7rem; font-weight: 600; letter-spacing: 0.5px;">Edit</span>
-                </div>
-            </div>
-            <p style="margin-top: 10px; font-size: 0.85rem; color: #999;">Click your photo to change it</p>
+/* Photo popup */
+.photo-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; }
+.photo-backdrop.open { display: flex; }
+.photo-popup { background: white; border-radius: 1.25rem; padding: 2rem 1.75rem 1.5rem; width: 320px; box-shadow: var(--shadow-elevated); transform: scale(0.9); opacity: 0; transition: transform .25s cubic-bezier(.34,1.56,.64,1), opacity .2s; text-align: center; }
+.photo-backdrop.open .photo-popup { transform: scale(1); opacity: 1; }
+.popup-title { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--clr-fg); margin-bottom: 6px; }
+.popup-sub { font-size: .82rem; color: var(--clr-muted-fg); margin-bottom: 1.5rem; }
+.popup-btn { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 18px; border-radius: 12px; border: none; font-size: .95rem; font-weight: 600; cursor: pointer; transition: background .18s, transform .15s; margin-bottom: 10px; text-align: left; font-family: var(--font-body); }
+.popup-btn:active { transform: scale(0.97); }
+.popup-btn-upload { background: var(--gradient-warm); color: white; }
+.popup-btn-upload:hover { opacity: .88; }
+.popup-btn-remove { background: hsl(var(--muted)); color: var(--clr-muted-fg); }
+.popup-btn-remove:hover { background: hsl(var(--border)); }
+.popup-btn-remove.disabled { opacity: .4; pointer-events: none; }
+.popup-close { position: absolute; top: 14px; right: 18px; background: none; border: none; font-size: 1.4rem; color: var(--clr-muted-fg); cursor: pointer; line-height: 1; padding: 4px; }
+.popup-close:hover { color: var(--clr-fg); }
+.popup-inner { position: relative; }
+.popup-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.2rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ds-container" style="padding-top:2.5rem;padding-bottom:4rem;max-width:720px;">
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="ds-alert ds-alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="ds-dash-header ds-reveal" style="margin-bottom:2rem;">
+    <h1>Edit Profile</h1>
+    <p>
+      Keep your profile up to date so
+      {% if role == 'host' %}co-hosts{% else %}hosts{% endif %}
+      can find and trust you.
+      <span class="role-badge role-{{ role }}">{{ role|title }}</span>
+    </p>
+  </div>
+
+  <!-- Avatar -->
+  <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:2rem;" class="ds-reveal">
+    <div id="avatar-trigger" title="Change photo" style="position:relative;width:120px;height:120px;cursor:pointer;">
+      {% if request.user.userprofile.profile_photo %}
+        <img id="avatar-img" src="{{ request.user.userprofile.profile_photo.url }}" alt="Profile photo"
+             style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:4px solid white;box-shadow:var(--shadow-soft);">
+      {% else %}
+        <div id="avatar-initials"
+             style="width:120px;height:120px;border-radius:50%;background:var(--gradient-warm);display:flex;align-items:center;justify-content:center;font-size:3rem;font-weight:bold;color:white;border:4px solid white;box-shadow:var(--shadow-soft);">
+          {{ request.user.first_name|slice:":1"|upper|default:request.user.username|slice:":1"|upper }}
         </div>
-
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            <!-- Hidden file input and remove flag -->
-            {{ user_form.profile_photo }}
-            <input type="hidden" name="remove_profile_photo" id="remove-flag" value="">
-
-            <!-- Personal Info -->
-            <div class="card">
-                <div class="card-title">👤 Personal Information</div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="{{ user_form.first_name.id_for_label }}">First Name</label>
-                        {{ user_form.first_name }}
-                        {% if user_form.first_name.errors %}
-                            <div class="error-text">{{ user_form.first_name.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="form-group">
-                        <label for="{{ user_form.last_name.id_for_label }}">Last Name</label>
-                        {{ user_form.last_name }}
-                        {% if user_form.last_name.errors %}
-                            <div class="error-text">{{ user_form.last_name.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="{{ user_form.email.id_for_label }}">Email Address</label>
-                        {{ user_form.email }}
-                        {% if user_form.email.errors %}
-                            <div class="error-text">{{ user_form.email.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="form-group">
-                        <label for="{{ user_form.phone_number.id_for_label }}">Phone Number <span style="font-weight: normal; color: #888;">(optional)</span></label>
-                        {{ user_form.phone_number }}
-                        {% if user_form.phone_number.errors %}
-                            <div class="error-text">{{ user_form.phone_number.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Public profiles / social links -->
-            <div class="card">
-                <div class="card-title">🔗 Public Profiles</div>
-                <p style="color: #888; font-size: 0.88rem; margin-bottom: 20px;">
-                    Add your profiles from Airbnb, Booking.com and other platforms so hosts and co-hosts can verify your experience.
-                </p>
-
-                <div id="links-list"></div>
-
-                <button type="button" id="add-link-btn"
-                        style="display: flex; align-items: center; gap: 8px; background: none; border: 2px dashed #ddd; border-radius: 10px; width: 100%; padding: 12px 16px; color: #999; font-size: 0.92rem; font-weight: 600; cursor: pointer; transition: border-color 0.2s, color 0.2s; margin-top: 4px;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    Add a profile link
-                </button>
-
-                <input type="hidden" name="social_links_data" id="social-links-data" value="[]">
-            </div>
-
-            <!-- Role-specific info -->
-            {% if role == 'host' %}
-            <div class="card">
-                <div class="card-title">🏠 Host Profile</div>
-
-                <div class="form-group">
-                    <label for="{{ role_form.bio.id_for_label }}">Bio</label>
-                    {{ role_form.bio }}
-                    <div class="help-text">Tell co-hosts about yourself and your properties.</div>
-                    {% if role_form.bio.errors %}
-                        <div class="error-text">{{ role_form.bio.errors.0 }}</div>
-                    {% endif %}
-                </div>
-            </div>
-
-            {% else %}
-            <div class="card">
-                <div class="card-title">🤝 Co-Host Profile</div>
-
-                <div class="form-group">
-                    <label for="{{ role_form.bio.id_for_label }}">Bio</label>
-                    {{ role_form.bio }}
-                    <div class="help-text">Describe your co-hosting experience and what makes you a great partner.</div>
-                    {% if role_form.bio.errors %}
-                        <div class="error-text">{{ role_form.bio.errors.0 }}</div>
-                    {% endif %}
-                </div>
-
-                <div class="form-group">
-                    <label for="{{ role_form.locations.id_for_label }}">Locations</label>
-                    {{ role_form.locations }}
-                    <div class="help-text">Cities or areas where you can co-host, comma-separated (e.g. New York, Miami).</div>
-                    {% if role_form.locations.errors %}
-                        <div class="error-text">{{ role_form.locations.errors.0 }}</div>
-                    {% endif %}
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="{{ role_form.experience_years.id_for_label }}">Years of Experience</label>
-                        {{ role_form.experience_years }}
-                        {% if role_form.experience_years.errors %}
-                            <div class="error-text">{{ role_form.experience_years.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="form-group">
-                        <label for="{{ role_form.hourly_rate.id_for_label }}">Daily Rate ($) <span style="font-weight: normal; color: #888;">(optional)</span></label>
-                        {{ role_form.hourly_rate }}
-                        <div class="help-text">Your typical daily rate for co-hosting services.</div>
-                        {% if role_form.hourly_rate.errors %}
-                            <div class="error-text">{{ role_form.hourly_rate.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div class="form-group" style="padding-top: 20px; border-top: 2px solid #f0f0f0;">
-                    <label style="display: block; margin-bottom: 6px;">Your Capabilities</label>
-                    <p class="help-text" style="margin-bottom: 12px;">Add the tasks and services you offer. These will be pre-filled when you apply for a listing.</p>
-                    <div class="task-input-container">
-                        <div class="task-input-wrapper" id="cap_input_wrapper">
-                            <div id="cap_selected_tasks" style="display: contents;"></div>
-                            <input type="text" id="cap_tasks_input" placeholder="Click to browse or type to search…" autocomplete="off">
-                        </div>
-                        <div id="cap_task_suggestions" class="task-suggestions"></div>
-                    </div>
-                    <input type="hidden" name="profile_tasks_data" id="profile_tasks_data" value="[]">
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Privacy Settings -->
-            <div style="background:white;border-radius:16px;padding:28px 32px;box-shadow:0 4px 20px rgba(0,0,0,.07);margin-bottom:24px;">
-                <h2 style="font-size:1.2rem;font-weight:800;color:#1a1a1a;margin-bottom:6px;">🔒 Privacy Settings</h2>
-                <p style="color:#888;font-size:.88rem;margin-bottom:20px;">Control who can send you direct messages.</p>
-                <label style="display:flex;align-items:flex-start;gap:16px;cursor:pointer;padding:16px;border:1.5px solid #e8e8e8;border-radius:12px;transition:border-color .2s;">
-                    <div style="position:relative;flex-shrink:0;margin-top:2px;">
-                        <input type="checkbox" name="restrict_messaging" id="restrict_messaging"
-                            {% if request.user.userprofile.restrict_messaging %}checked{% endif %}
-                            style="opacity:0;position:absolute;width:0;height:0;"
-                            onchange="updateToggle(this)">
-                        <div id="toggle-track" style="width:44px;height:24px;border-radius:12px;background:{% if request.user.userprofile.restrict_messaging %}#FF385C{% else %}#ddd{% endif %};transition:background .2s;position:relative;">
-                            <div id="toggle-thumb" style="position:absolute;top:3px;left:{% if request.user.userprofile.restrict_messaging %}23px{% else %}3px{% endif %};width:18px;height:18px;border-radius:50%;background:white;box-shadow:0 1px 4px rgba(0,0,0,.25);transition:left .2s;"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div style="font-weight:700;color:#222;font-size:.95rem;">Restrict direct messages</div>
-                        <div style="color:#888;font-size:.83rem;margin-top:3px;line-height:1.5;">
-                            When <strong>ON</strong> — only users with an active proposal or partnership can message you.<br>
-                            When <strong>OFF</strong> — any connected user can start a conversation with you.
-                        </div>
-                    </div>
-                </label>
-            </div>
-
-            <div class="actions">
-                <button type="submit" class="btn btn-save">Save Changes</button>
-                {% if role == 'host' %}
-                    <a href="{% url 'host_dashboard' %}" class="btn btn-cancel">Cancel</a>
-                {% else %}
-                    <a href="{% url 'cohost_dashboard' %}" class="btn btn-cancel">Cancel</a>
-                {% endif %}
-            </div>
-        </form>
+        <img id="avatar-img" src="" alt="Preview"
+             style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:4px solid white;box-shadow:var(--shadow-soft);display:none;position:absolute;top:0;left:0;">
+      {% endif %}
+      <div id="avatar-overlay"
+           style="position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,.45);display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;color:white;gap:4px;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+        <span style="font-size:.7rem;font-weight:600;letter-spacing:.5px;">Edit</span>
+      </div>
     </div>
-<!-- Photo popup -->
-<div class="photo-backdrop" id="photo-backdrop">
-    <div class="photo-popup">
-        <div class="popup-inner">
-            <button type="button" class="popup-close" id="popup-close" aria-label="Close">&times;</button>
-            <div class="popup-title">Change profile photo</div>
-            <div class="popup-sub">JPG, PNG or GIF &mdash; max 5 MB</div>
+    <p style="margin-top:10px;font-size:.85rem;color:var(--clr-muted-fg);">Click your photo to change it</p>
+  </div>
 
-            <button type="button" class="popup-btn popup-btn-upload" id="popup-upload">
-                <span class="popup-icon" style="background: rgba(255,255,255,0.2);">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                        <circle cx="12" cy="13" r="4"/>
-                    </svg>
-                </span>
-                Upload a new photo
-            </button>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ user_form.profile_photo }}
+    <input type="hidden" name="remove_profile_photo" id="remove-flag" value="">
 
-            <button type="button" class="popup-btn popup-btn-remove {% if not request.user.userprofile.profile_photo %}disabled{% endif %}" id="popup-remove">
-                <span class="popup-icon" style="background: #f0f0f0;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-                    </svg>
-                </span>
-                Remove photo
-            </button>
+    <!-- Personal Info -->
+    <div class="ds-card ds-reveal" style="padding:1.75rem;margin-bottom:1.5rem;">
+      <h3 style="font-family:var(--font-display);font-size:1.05rem;font-weight:700;color:var(--clr-fg);margin-bottom:1.25rem;padding-bottom:.875rem;border-bottom:1px solid var(--clr-border);">👤 Personal Information</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div class="ds-form-group">
+          <label class="ds-label" for="{{ user_form.first_name.id_for_label }}">First Name</label>
+          {{ user_form.first_name }}
+          {% if user_form.first_name.errors %}<div style="color:hsl(0 75% 52%);font-size:.85rem;margin-top:4px;">{{ user_form.first_name.errors.0 }}</div>{% endif %}
         </div>
+        <div class="ds-form-group">
+          <label class="ds-label" for="{{ user_form.last_name.id_for_label }}">Last Name</label>
+          {{ user_form.last_name }}
+          {% if user_form.last_name.errors %}<div style="color:hsl(0 75% 52%);font-size:.85rem;margin-top:4px;">{{ user_form.last_name.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div class="ds-form-group">
+          <label class="ds-label" for="{{ user_form.email.id_for_label }}">Email Address</label>
+          {{ user_form.email }}
+          {% if user_form.email.errors %}<div style="color:hsl(0 75% 52%);font-size:.85rem;margin-top:4px;">{{ user_form.email.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="ds-form-group">
+          <label class="ds-label" for="{{ user_form.phone_number.id_for_label }}">Phone Number <span style="font-weight:400;color:var(--clr-muted-fg);">(optional)</span></label>
+          {{ user_form.phone_number }}
+          {% if user_form.phone_number.errors %}<div style="color:hsl(0 75% 52%);font-size:.85rem;margin-top:4px;">{{ user_form.phone_number.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
     </div>
+
+    <!-- Social Links -->
+    <div class="ds-card ds-reveal" style="padding:1.75rem;margin-bottom:1.5rem;">
+      <h3 style="font-family:var(--font-display);font-size:1.05rem;font-weight:700;color:var(--clr-fg);margin-bottom:.5rem;padding-bottom:.875rem;border-bottom:1px solid var(--clr-border);">🔗 Public Profiles</h3>
+      <p style="color:var(--clr-muted-fg);font-size:.88rem;margin-bottom:1.25rem;">
+        Add your profiles from Airbnb, Booking.com and other platforms so hosts and co-hosts can verify your experience.
+      </p>
+      <div id="links-list"></div>
+      <button type="button" id="add-link-btn"
+              style="display:flex;align-items:center;gap:8px;background:none;border:2px dashed var(--clr-border);border-radius:10px;width:100%;padding:12px 16px;color:var(--clr-muted-fg);font-size:.92rem;font-weight:600;cursor:pointer;transition:border-color .2s,color .2s;margin-top:4px;font-family:var(--font-body);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add a profile link
+      </button>
+      <input type="hidden" name="social_links_data" id="social-links-data" value="[]">
+    </div>
+
+    <!-- Role-specific -->
+    {% if role == 'host' %}
+    <div class="ds-card ds-reveal" style="padding:1.75rem;margin-bottom:1.5rem;">
+      <h3 style="font-family:var(--font-display);font-size:1.05rem;font-weight:700;color:var(--clr-fg);margin-bottom:1.25rem;padding-bottom:.875rem;border-bottom:1px solid var(--clr-border);">🏠 Host Profile</h3>
+      <div class="ds-form-group">
+        <label class="ds-label" for="{{ role_form.bio.id_for_label }}">Bio</label>
+        {{ role_form.bio }}
+        <div style="font-size:.82rem;color:var(--clr-muted-fg);margin-top:4px;">Tell co-hosts about yourself and your properties.</div>
+        {% if role_form.bio.errors %}<div style="color:hsl(0 75% 52%);font-size:.85rem;margin-top:4px;">{{ role_form.bio.errors.0 }}</div>{% endif %}
+      </div>
+    </div>
+
+    {% else %}
+    <div class="ds-card ds-reveal" style="padding:1.75rem;margin-bottom:1.5rem;">
+      <h3 style="font-family:var(--font-display);font-size:1.05rem;font-weight:700;color:var(--clr-fg);margin-bottom:1.25rem;padding-bottom:.875rem;border-bottom:1px solid var(--clr-border);">🤝 Co-Host Profile</h3>
+      <div class="ds-form-group">
+        <label class="ds-label" for="{{ role_form.bio.id_for_label }}">Bio</label>
+        {{ role_form.bio }}
+        <div style="font-size:.82rem;color:var(--clr-muted-fg);margin-top:4px;">Describe your co-hosting experience and what makes you a great partner.</div>
+        {% if role_form.bio.errors %}<div style="color:hsl(0 75% 52%);font-size:.85rem;margin-top:4px;">{{ role_form.bio.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="ds-form-group">
+        <label class="ds-label" for="{{ role_form.locations.id_for_label }}">Locations</label>
+        {{ role_form.locations }}
+        <div style="font-size:.82rem;color:var(--clr-muted-fg);margin-top:4px;">Cities or areas where you can co-host, comma-separated (e.g. New York, Miami).</div>
+        {% if role_form.locations.errors %}<div style="color:hsl(0 75% 52%);font-size:.85rem;margin-top:4px;">{{ role_form.locations.errors.0 }}</div>{% endif %}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div class="ds-form-group">
+          <label class="ds-label" for="{{ role_form.experience_years.id_for_label }}">Years of Experience</label>
+          {{ role_form.experience_years }}
+          {% if role_form.experience_years.errors %}<div style="color:hsl(0 75% 52%);font-size:.85rem;margin-top:4px;">{{ role_form.experience_years.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="ds-form-group">
+          <label class="ds-label" for="{{ role_form.hourly_rate.id_for_label }}">Daily Rate ($) <span style="font-weight:400;color:var(--clr-muted-fg);">(optional)</span></label>
+          {{ role_form.hourly_rate }}
+          <div style="font-size:.82rem;color:var(--clr-muted-fg);margin-top:4px;">Your typical daily rate for co-hosting services.</div>
+          {% if role_form.hourly_rate.errors %}<div style="color:hsl(0 75% 52%);font-size:.85rem;margin-top:4px;">{{ role_form.hourly_rate.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+      <div class="ds-form-group" style="padding-top:1.25rem;border-top:1px solid var(--clr-border);">
+        <label class="ds-label">Your Capabilities</label>
+        <p style="font-size:.82rem;color:var(--clr-muted-fg);margin-bottom:.75rem;">Add the tasks and services you offer. These will be pre-filled when you apply for a listing.</p>
+        <div class="task-input-container">
+          <div class="task-input-wrapper" id="cap_input_wrapper">
+            <div id="cap_selected_tasks" style="display:contents;"></div>
+            <input type="text" id="cap_tasks_input" placeholder="Click to browse or type to search…" autocomplete="off">
+          </div>
+          <div id="cap_task_suggestions" class="task-suggestions"></div>
+        </div>
+        <input type="hidden" name="profile_tasks_data" id="profile_tasks_data" value="[]">
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Privacy Settings -->
+    <div class="ds-card ds-reveal" style="padding:1.75rem;margin-bottom:1.5rem;">
+      <h3 style="font-family:var(--font-display);font-size:1.1rem;font-weight:800;color:var(--clr-fg);margin-bottom:6px;">🔒 Privacy Settings</h3>
+      <p style="color:var(--clr-muted-fg);font-size:.88rem;margin-bottom:1.25rem;">Control who can send you direct messages.</p>
+      <label style="display:flex;align-items:flex-start;gap:16px;cursor:pointer;padding:16px;border:1.5px solid var(--clr-border);border-radius:12px;transition:border-color .2s;">
+        <div style="position:relative;flex-shrink:0;margin-top:2px;">
+          <input type="checkbox" name="restrict_messaging" id="restrict_messaging"
+              {% if request.user.userprofile.restrict_messaging %}checked{% endif %}
+              style="opacity:0;position:absolute;width:0;height:0;"
+              onchange="updateToggle(this)">
+          <div id="toggle-track" style="width:44px;height:24px;border-radius:12px;background:{% if request.user.userprofile.restrict_messaging %}var(--clr-primary){% else %}var(--clr-border){% endif %};transition:background .2s;position:relative;">
+            <div id="toggle-thumb" style="position:absolute;top:3px;left:{% if request.user.userprofile.restrict_messaging %}23px{% else %}3px{% endif %};width:18px;height:18px;border-radius:50%;background:white;box-shadow:0 1px 4px rgba(0,0,0,.25);transition:left .2s;"></div>
+          </div>
+        </div>
+        <div>
+          <div style="font-weight:700;color:var(--clr-fg);font-size:.95rem;">Restrict direct messages</div>
+          <div style="color:var(--clr-muted-fg);font-size:.83rem;margin-top:3px;line-height:1.5;">
+            When <strong>ON</strong> — only users with an active proposal or partnership can message you.<br>
+            When <strong>OFF</strong> — any connected user can start a conversation with you.
+          </div>
+        </div>
+      </label>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;" class="ds-reveal">
+      <button type="submit" class="ds-btn ds-btn-primary">Save Changes</button>
+      {% if role == 'host' %}
+        <a href="{% url 'host_dashboard' %}" class="ds-btn ds-btn-muted">Cancel</a>
+      {% else %}
+        <a href="{% url 'cohost_dashboard' %}" class="ds-btn ds-btn-muted">Cancel</a>
+      {% endif %}
+    </div>
+  </form>
 </div>
 
+<!-- Photo popup -->
+<div class="photo-backdrop" id="photo-backdrop">
+  <div class="photo-popup">
+    <div class="popup-inner">
+      <button type="button" class="popup-close" id="popup-close" aria-label="Close">&times;</button>
+      <div class="popup-title">Change profile photo</div>
+      <div class="popup-sub">JPG, PNG or GIF &mdash; max 5 MB</div>
+      <button type="button" class="popup-btn popup-btn-upload" id="popup-upload">
+        <span class="popup-icon" style="background:rgba(255,255,255,.2);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </span>
+        Upload a new photo
+      </button>
+      <button type="button" class="popup-btn popup-btn-remove {% if not request.user.userprofile.profile_photo %}disabled{% endif %}" id="popup-remove">
+        <span class="popup-icon" style="background:hsl(var(--muted));">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--clr-muted-fg)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </span>
+        Remove photo
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
 <script>
-    const backdrop   = document.getElementById('photo-backdrop');
-    const trigger    = document.getElementById('avatar-trigger');
-    const overlay    = document.getElementById('avatar-overlay');
-    const fileInput  = document.getElementById('id_profile_photo');
-    const removeFlag = document.getElementById('remove-flag');
-    const avatarImg  = document.getElementById('avatar-img');
-    const initials   = document.getElementById('avatar-initials');
+// Apply ds-input to Django-rendered form fields
+document.querySelectorAll('.ds-card input[type=text], .ds-card input[type=email], .ds-card input[type=tel], .ds-card input[type=number], .ds-card textarea, .ds-card select').forEach(function(el) {
+    if (!el.id.startsWith('cap_') && el.type !== 'hidden' && el.type !== 'checkbox') el.classList.add('ds-input');
+});
 
-    // Hover effect on avatar
-    trigger.addEventListener('mouseenter', () => overlay.style.opacity = '1');
-    trigger.addEventListener('mouseleave', () => overlay.style.opacity = '0');
+const backdrop   = document.getElementById('photo-backdrop');
+const trigger    = document.getElementById('avatar-trigger');
+const overlay    = document.getElementById('avatar-overlay');
+const fileInput  = document.getElementById('id_profile_photo');
+const removeFlag = document.getElementById('remove-flag');
+const avatarImg  = document.getElementById('avatar-img');
+const initials   = document.getElementById('avatar-initials');
 
-    // Open popup
-    trigger.addEventListener('click', () => {
-        backdrop.classList.add('open');
-    });
+trigger.addEventListener('mouseenter', () => overlay.style.opacity = '1');
+trigger.addEventListener('mouseleave', () => overlay.style.opacity = '0');
+trigger.addEventListener('click', () => backdrop.classList.add('open'));
 
-    // Close popup
-    function closePopup() { backdrop.classList.remove('open'); }
-    document.getElementById('popup-close').addEventListener('click', closePopup);
-    backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closePopup(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePopup(); });
+function closePopup() { backdrop.classList.remove('open'); }
+document.getElementById('popup-close').addEventListener('click', closePopup);
+backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closePopup(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePopup(); });
 
-    // Upload option
-    document.getElementById('popup-upload').addEventListener('click', () => {
-        fileInput.click();
-        closePopup();
-    });
+document.getElementById('popup-upload').addEventListener('click', () => { fileInput.click(); closePopup(); });
 
-    // File selected → preview on avatar
-    fileInput.addEventListener('change', function () {
-        const file = this.files[0];
-        if (!file) return;
-        removeFlag.value = '';
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            avatarImg.src = e.target.result;
-            avatarImg.style.display = 'block';
-            avatarImg.style.position = '';
-            if (initials) initials.style.display = 'none';
-        };
-        reader.readAsDataURL(file);
-    });
+fileInput.addEventListener('change', function () {
+    const file = this.files[0];
+    if (!file) return;
+    removeFlag.value = '';
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        avatarImg.src = e.target.result;
+        avatarImg.style.display = 'block';
+        avatarImg.style.position = '';
+        if (initials) initials.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+});
 
-    // ── Capabilities (co-host profile tasks) ─────────────────────────────────
-    {% if role == 'cohost' %}
-    (function () {
-        const wrapper     = document.getElementById('cap_input_wrapper');
-        const input       = document.getElementById('cap_tasks_input');
-        const suggestBox  = document.getElementById('cap_task_suggestions');
-        const container   = document.getElementById('cap_selected_tasks');
-        const hidden      = document.getElementById('profile_tasks_data');
-        if (!wrapper) return;
+// ── Capabilities (co-host profile tasks) ─────────────────────────────────────
+{% if role == 'cohost' %}
+(function () {
+    const wrapper    = document.getElementById('cap_input_wrapper');
+    const input      = document.getElementById('cap_tasks_input');
+    const suggestBox = document.getElementById('cap_task_suggestions');
+    const container  = document.getElementById('cap_selected_tasks');
+    const hidden     = document.getElementById('profile_tasks_data');
+    if (!wrapper) return;
 
-        let selected = {{ profile_tasks_json|safe }};
+    let selected = {{ profile_tasks_json|safe }};
 
-        function sync() {
-            hidden.value = JSON.stringify(selected);
-        }
+    function sync() { hidden.value = JSON.stringify(selected); }
 
-        function renderTags() {
-            container.innerHTML = '';
-            selected.forEach(t => {
-                const tag = document.createElement('span');
-                tag.className = 'task-tag';
-                tag.innerHTML = `${t.name}<button type="button" class="remove-task">×</button>`;
-                tag.querySelector('.remove-task').addEventListener('click', () => {
-                    selected = selected.filter(x => x.name !== t.name);
-                    renderTags(); sync();
-                    if (suggestBox.style.display === 'block') fetchSuggestions(input.value.trim());
-                });
-                container.appendChild(tag);
+    function renderTags() {
+        container.innerHTML = '';
+        selected.forEach(t => {
+            const tag = document.createElement('span');
+            tag.className = 'task-tag';
+            tag.innerHTML = `${t.name}<button type="button" class="remove-task">×</button>`;
+            tag.querySelector('.remove-task').addEventListener('click', () => {
+                selected = selected.filter(x => x.name !== t.name);
+                renderTags(); sync();
+                if (suggestBox.style.display === 'block') fetchSuggestions(input.value.trim());
             });
-            input.placeholder = selected.length ? 'Add more…' : 'Click to browse or type to search…';
-        }
-
-        function addTask(name, id = null) {
-            if (selected.some(t => t.name === name)) return;
-            selected.push({ name, id });
-            renderTags(); sync();
-            input.value = '';
-            if (suggestBox.style.display === 'block') fetchSuggestions('');
-            else hideSug();
-        }
-
-        function hideSug() { suggestBox.style.display = 'none'; }
-
-        function showSug(tasks, allMode) {
-            const avail = tasks.filter(t => !selected.some(s => s.name === t.name));
-            if (!avail.length) { hideSug(); return; }
-            suggestBox.innerHTML = '';
-            if (allMode) {
-                const hdr = document.createElement('div');
-                hdr.style.cssText = 'padding:7px 14px;background:#f8f9fa;border-bottom:1px solid #eee;font-size:11px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.5px';
-                hdr.textContent = `${avail.length} available`;
-                suggestBox.appendChild(hdr);
-            }
-            avail.forEach(t => {
-                const d = document.createElement('div');
-                d.className = 'task-suggestion' + (t.exists ? '' : ' new-task');
-                d.innerHTML = `<strong>${t.name}</strong>${t.exists ? '' : '<small style="display:block;color:#666;">+ Create new</small>'}`;
-                d.addEventListener('click', () => addTask(t.name, t.id));
-                suggestBox.appendChild(d);
-            });
-            suggestBox.style.display = 'block';
-        }
-
-        let debounce;
-        function fetchSuggestions(q) {
-            fetch(`/api/tasks/autocomplete/?q=${encodeURIComponent(q)}`)
-                .then(r => r.json())
-                .then(d => showSug(d.tasks, q.length === 0))
-                .catch(() => hideSug());
-        }
-
-        wrapper.addEventListener('click', e => {
-            if (e.target === wrapper || e.target === container) input.focus();
+            container.appendChild(tag);
         });
-        input.addEventListener('focus', () => { if (!input.value.trim()) fetchSuggestions(''); });
-        input.addEventListener('input', () => {
-            clearTimeout(debounce);
-            debounce = setTimeout(() => fetchSuggestions(input.value.trim()), 300);
-        });
-        input.addEventListener('keydown', e => {
-            if (e.key === 'Enter') { e.preventDefault(); if (input.value.trim()) addTask(input.value.trim()); }
-        });
-        document.addEventListener('click', e => {
-            if (!e.target.closest('.task-input-container')) hideSug();
-        });
+        input.placeholder = selected.length ? 'Add more…' : 'Click to browse or type to search…';
+    }
 
+    function addTask(name, id = null) {
+        if (selected.some(t => t.name === name)) return;
+        selected.push({ name, id });
         renderTags(); sync();
-    })();
-    {% endif %}
-    // ─────────────────────────────────────────────────────────────────────────
+        input.value = '';
+        if (suggestBox.style.display === 'block') fetchSuggestions('');
+        else hideSug();
+    }
 
-    // ── Social links ──────────────────────────────────────────────────────────
-    const CDN = 'https://cdn.simpleicons.org';
-    // Fallback SVG for "Other" (no Simple Icons entry)
-    const LINK_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
+    function hideSug() { suggestBox.style.display = 'none'; }
 
-    const PLATFORMS = [
-        { value: 'airbnb',      label: 'Airbnb',      color: '#FF385C', slug: 'airbnb',          domains: ['airbnb.com'],         placeholder: 'airbnb.com/users/show/...' },
-        { value: 'booking',     label: 'Booking.com', color: '#003580', slug: 'bookingdotcom',    domains: ['booking.com'],         placeholder: 'booking.com/...' },
-        { value: 'vrbo',        label: 'VRBO',        color: '#175491', slug: 'vrbo',             domains: ['vrbo.com'],            placeholder: 'vrbo.com/...' },
-        { value: 'tripadvisor', label: 'TripAdvisor', color: '#34E0A1', slug: 'tripadvisor',      domains: ['tripadvisor.com'],     placeholder: 'tripadvisor.com/...' },
-        { value: 'expedia',     label: 'Expedia',     color: '#00355F', slug: 'expedia',          domains: ['expedia.com'],         placeholder: 'expedia.com/...' },
-        { value: 'linkedin',    label: 'LinkedIn',    color: '#0A66C2', slug: 'linkedin',         domains: ['linkedin.com'],        placeholder: 'linkedin.com/in/...' },
-        { value: 'other',       label: 'Other',       color: '#6c757d', slug: null,               domains: [],                     placeholder: 'https://...' },
-    ];
-
-    // Build an <img> or fallback <span> for a platform icon
-    function makeIconEl(p, size) {
-        if (!p.slug) {
-            const span = document.createElement('span');
-            span.innerHTML = LINK_SVG;
-            const svg = span.firstChild;
-            svg.setAttribute('width', size);
-            svg.setAttribute('height', size);
-            svg.style.color = 'white';
-            svg.style.display = 'block';
-            return svg;
+    function showSug(tasks, allMode) {
+        const avail = tasks.filter(t => !selected.some(s => s.name === t.name));
+        if (!avail.length) { hideSug(); return; }
+        suggestBox.innerHTML = '';
+        if (allMode) {
+            const hdr = document.createElement('div');
+            hdr.style.cssText = 'padding:7px 14px;background:hsl(var(--muted));border-bottom:1px solid var(--clr-border);font-size:11px;color:var(--clr-muted-fg);font-weight:700;text-transform:uppercase;letter-spacing:.5px';
+            hdr.textContent = `${avail.length} available`;
+            suggestBox.appendChild(hdr);
         }
-        const img = document.createElement('img');
-        img.src = `${CDN}/${p.slug}/ffffff`;
-        img.width = size;
-        img.height = size;
-        img.alt = p.label;
-        img.style.display = 'block';
-        // On load failure fall back to a generic link SVG
-        img.onerror = function () {
-            const span = document.createElement('span');
-            span.innerHTML = LINK_SVG;
-            const svg = span.firstChild;
-            svg.setAttribute('width', size);
-            svg.setAttribute('height', size);
-            svg.style.color = 'white';
-            svg.style.display = 'block';
-            this.replaceWith(svg);
-        };
-        return img;
-    }
-
-    // Detect platform from a typed URL
-    function detectPlatform(url) {
-        const lower = url.toLowerCase();
-        for (const p of PLATFORMS) {
-            if (p.domains.some(d => lower.includes(d))) return p;
-        }
-        return null;
-    }
-
-    const linksList  = document.getElementById('links-list');
-    const hiddenData = document.getElementById('social-links-data');
-    const addBtn     = document.getElementById('add-link-btn');
-    let activePicker = null;
-
-    function closePicker() {
-        if (activePicker) { activePicker.classList.remove('open'); activePicker = null; }
-    }
-    document.addEventListener('click', e => { if (!e.target.closest('.link-row')) closePicker(); });
-
-    function serialize() {
-        const data = [];
-        linksList.querySelectorAll('.link-row').forEach(row => {
-            const url = row.querySelector('.link-url-input').value.trim();
-            if (url) data.push({ platform: row.dataset.platform, url });
+        avail.forEach(t => {
+            const d = document.createElement('div');
+            d.className = 'task-suggestion' + (t.exists ? '' : ' new-task');
+            d.innerHTML = `<strong>${t.name}</strong>${t.exists ? '' : '<small style="display:block;color:var(--clr-muted-fg);">+ Create new</small>'}`;
+            d.addEventListener('click', () => addTask(t.name, t.id));
+            suggestBox.appendChild(d);
         });
-        hiddenData.value = JSON.stringify(data);
+        suggestBox.style.display = 'block';
     }
 
-    // Apply a platform to an existing row (used by picker click AND auto-detect)
-    function applyPlatform(row, badge, inp, picker, p) {
-        row.dataset.platform = p.value;
-        badge.style.background = p.color;
-        badge.innerHTML = '';
-        badge.appendChild(makeIconEl(p, 22));
-        inp.placeholder = p.placeholder;
-        inp.style.borderLeftColor = p.color;
-        picker.querySelectorAll('.platform-option').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.value === p.value);
-        });
+    let debounce;
+    function fetchSuggestions(q) {
+        fetch(`/api/tasks/autocomplete/?q=${encodeURIComponent(q)}`)
+            .then(r => r.json())
+            .then(d => showSug(d.tasks, q.length === 0))
+            .catch(() => hideSug());
     }
 
-    function buildRow(platformValue = 'other', url = '') {
-        const p   = PLATFORMS.find(x => x.value === platformValue) || PLATFORMS[PLATFORMS.length - 1];
-        const row = document.createElement('div');
-        row.className = 'link-row';
-        row.dataset.platform = p.value;
+    wrapper.addEventListener('click', e => { if (e.target === wrapper || e.target === container) input.focus(); });
+    input.addEventListener('focus', () => { if (!input.value.trim()) fetchSuggestions(''); });
+    input.addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(() => fetchSuggestions(input.value.trim()), 300); });
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if (input.value.trim()) addTask(input.value.trim()); } });
+    document.addEventListener('click', e => { if (!e.target.closest('.task-input-container')) hideSug(); });
 
-        // Coloured icon badge (picker trigger)
-        const badge = document.createElement('button');
-        badge.type = 'button';
-        badge.className = 'platform-badge-btn';
-        badge.style.background = p.color;
-        badge.title = 'Change platform';
-        badge.appendChild(makeIconEl(p, 22));
+    renderTags(); sync();
+})();
+{% endif %}
 
-        // Picker dropdown
-        const picker = document.createElement('div');
-        picker.className = 'platform-picker';
-        PLATFORMS.forEach(opt => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.dataset.value = opt.value;
-            btn.className = 'platform-option' + (opt.value === p.value ? ' active' : '');
-            const iconWrap = document.createElement('span');
-            iconWrap.className = 'platform-option-icon';
-            iconWrap.style.background = opt.color;
-            iconWrap.appendChild(makeIconEl(opt, 16));
-            btn.appendChild(iconWrap);
-            btn.appendChild(document.createTextNode(opt.label));
-            btn.addEventListener('click', () => {
-                applyPlatform(row, badge, inp, picker, opt);
-                closePicker();
-                serialize();
-            });
-            picker.appendChild(btn);
-        });
+// ── Social links ──────────────────────────────────────────────────────────────
+const CDN = 'https://cdn.simpleicons.org';
+const LINK_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
 
-        badge.addEventListener('click', e => {
-            e.stopPropagation();
-            const isOpen = picker.classList.contains('open');
-            closePicker();
-            if (!isOpen) { picker.classList.add('open'); activePicker = picker; }
-        });
+const PLATFORMS = [
+    { value: 'airbnb',      label: 'Airbnb',      color: '#FF385C', slug: 'airbnb',          domains: ['airbnb.com'],         placeholder: 'airbnb.com/users/show/...' },
+    { value: 'booking',     label: 'Booking.com', color: '#003580', slug: 'bookingdotcom',    domains: ['booking.com'],         placeholder: 'booking.com/...' },
+    { value: 'vrbo',        label: 'VRBO',        color: '#175491', slug: 'vrbo',             domains: ['vrbo.com'],            placeholder: 'vrbo.com/...' },
+    { value: 'tripadvisor', label: 'TripAdvisor', color: '#34E0A1', slug: 'tripadvisor',      domains: ['tripadvisor.com'],     placeholder: 'tripadvisor.com/...' },
+    { value: 'expedia',     label: 'Expedia',     color: '#00355F', slug: 'expedia',          domains: ['expedia.com'],         placeholder: 'expedia.com/...' },
+    { value: 'linkedin',    label: 'LinkedIn',    color: '#0A66C2', slug: 'linkedin',         domains: ['linkedin.com'],        placeholder: 'linkedin.com/in/...' },
+    { value: 'other',       label: 'Other',       color: '#6c757d', slug: null,               domains: [],                     placeholder: 'https://...' },
+];
 
-        // URL input with coloured left border
-        const inp = document.createElement('input');
-        inp.type = 'url';
-        inp.className = 'link-url-input';
-        inp.value = url;
-        inp.placeholder = p.placeholder;
-        inp.style.borderLeftColor = p.color;
-
-        let detectTimeout;
-        inp.addEventListener('input', () => {
-            serialize();
-            clearTimeout(detectTimeout);
-            detectTimeout = setTimeout(() => {
-                const detected = detectPlatform(inp.value);
-                if (detected && detected.value !== row.dataset.platform) {
-                    applyPlatform(row, badge, inp, picker, detected);
-                }
-            }, 400);
-        });
-
-        // Remove button
-        const rm = document.createElement('button');
-        rm.type = 'button';
-        rm.className = 'link-remove-btn';
-        rm.title = 'Remove';
-        rm.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
-        rm.addEventListener('click', () => { row.remove(); serialize(); });
-
-        row.append(badge, picker, inp, rm);
-        linksList.appendChild(row);
-        serialize();
+function makeIconEl(p, size) {
+    if (!p.slug) {
+        const span = document.createElement('span');
+        span.innerHTML = LINK_SVG;
+        const svg = span.firstChild;
+        svg.setAttribute('width', size); svg.setAttribute('height', size);
+        svg.style.color = 'white'; svg.style.display = 'block';
+        return svg;
     }
+    const img = document.createElement('img');
+    img.src = `${CDN}/${p.slug}/ffffff`;
+    img.width = size; img.height = size; img.alt = p.label; img.style.display = 'block';
+    img.onerror = function () {
+        const span = document.createElement('span');
+        span.innerHTML = LINK_SVG;
+        const svg = span.firstChild;
+        svg.setAttribute('width', size); svg.setAttribute('height', size);
+        svg.style.color = 'white'; svg.style.display = 'block';
+        this.replaceWith(svg);
+    };
+    return img;
+}
 
-    addBtn.addEventListener('click', () => buildRow());
+function detectPlatform(url) {
+    const lower = url.toLowerCase();
+    for (const p of PLATFORMS) { if (p.domains.some(d => lower.includes(d))) return p; }
+    return null;
+}
 
-    // Pre-populate from server
-    const initial = {{ existing_links_json|safe }};
-    initial.forEach(l => buildRow(l.platform, l.url));
+const linksList  = document.getElementById('links-list');
+const hiddenData = document.getElementById('social-links-data');
+const addBtn     = document.getElementById('add-link-btn');
+let activePicker = null;
 
-    // ─────────────────────────────────────────────────────────────────────────
+function closePicker() { if (activePicker) { activePicker.classList.remove('open'); activePicker = null; } }
+document.addEventListener('click', e => { if (!e.target.closest('.link-row')) closePicker(); });
 
-    // Remove option
-    document.getElementById('popup-remove').addEventListener('click', () => {
-        fileInput.value = '';
-        removeFlag.value = '1';
-        avatarImg.style.display = 'none';
-        if (initials) {
-            initials.style.display = 'flex';
-        } else {
-            // If they had a real photo, show initials fallback
-            const fallback = document.createElement('div');
-            fallback.id = 'avatar-initials';
-            fallback.style.cssText = 'width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,#FF385C,#E31C3D);display:flex;align-items:center;justify-content:center;font-size:3rem;font-weight:bold;color:white;border:4px solid white;box-shadow:0 4px 20px rgba(255,56,92,0.35);';
-            fallback.textContent = avatarImg.alt.slice(0,1).toUpperCase() || '?';
-            trigger.insertBefore(fallback, avatarImg);
-        }
-        closePopup();
+function serialize() {
+    const data = [];
+    linksList.querySelectorAll('.link-row').forEach(row => {
+        const url = row.querySelector('.link-url-input').value.trim();
+        if (url) data.push({ platform: row.dataset.platform, url });
     });
+    hiddenData.value = JSON.stringify(data);
+}
+
+function applyPlatform(row, badge, inp, picker, p) {
+    row.dataset.platform = p.value;
+    badge.style.background = p.color;
+    badge.innerHTML = '';
+    badge.appendChild(makeIconEl(p, 22));
+    inp.placeholder = p.placeholder;
+    inp.style.borderLeftColor = p.color;
+    picker.querySelectorAll('.platform-option').forEach(btn => btn.classList.toggle('active', btn.dataset.value === p.value));
+}
+
+function buildRow(platformValue = 'other', url = '') {
+    const p   = PLATFORMS.find(x => x.value === platformValue) || PLATFORMS[PLATFORMS.length - 1];
+    const row = document.createElement('div');
+    row.className = 'link-row';
+    row.dataset.platform = p.value;
+
+    const badge = document.createElement('button');
+    badge.type = 'button';
+    badge.className = 'platform-badge-btn';
+    badge.style.background = p.color;
+    badge.title = 'Change platform';
+    badge.appendChild(makeIconEl(p, 22));
+
+    const picker = document.createElement('div');
+    picker.className = 'platform-picker';
+    PLATFORMS.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.dataset.value = opt.value;
+        btn.className = 'platform-option' + (opt.value === p.value ? ' active' : '');
+        const iconWrap = document.createElement('span');
+        iconWrap.className = 'platform-option-icon';
+        iconWrap.style.background = opt.color;
+        iconWrap.appendChild(makeIconEl(opt, 16));
+        btn.appendChild(iconWrap);
+        btn.appendChild(document.createTextNode(opt.label));
+        btn.addEventListener('click', () => { applyPlatform(row, badge, inp, picker, opt); closePicker(); serialize(); });
+        picker.appendChild(btn);
+    });
+
+    badge.addEventListener('click', e => {
+        e.stopPropagation();
+        const isOpen = picker.classList.contains('open');
+        closePicker();
+        if (!isOpen) { picker.classList.add('open'); activePicker = picker; }
+    });
+
+    const inp = document.createElement('input');
+    inp.type = 'url';
+    inp.className = 'link-url-input';
+    inp.value = url;
+    inp.placeholder = p.placeholder;
+    inp.style.borderLeftColor = p.color;
+
+    let detectTimeout;
+    inp.addEventListener('input', () => {
+        serialize();
+        clearTimeout(detectTimeout);
+        detectTimeout = setTimeout(() => {
+            const detected = detectPlatform(inp.value);
+            if (detected && detected.value !== row.dataset.platform) applyPlatform(row, badge, inp, picker, detected);
+        }, 400);
+    });
+
+    const rm = document.createElement('button');
+    rm.type = 'button';
+    rm.className = 'link-remove-btn';
+    rm.title = 'Remove';
+    rm.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+    rm.addEventListener('click', () => { row.remove(); serialize(); });
+
+    row.append(badge, picker, inp, rm);
+    linksList.appendChild(row);
+    serialize();
+}
+
+addBtn.addEventListener('click', () => buildRow());
+addBtn.addEventListener('mouseenter', () => { addBtn.style.borderColor = 'var(--clr-primary)'; addBtn.style.color = 'var(--clr-primary)'; });
+addBtn.addEventListener('mouseleave', () => { addBtn.style.borderColor = ''; addBtn.style.color = ''; });
+
+const initial = {{ existing_links_json|safe }};
+initial.forEach(l => buildRow(l.platform, l.url));
+
+// Remove photo option
+document.getElementById('popup-remove').addEventListener('click', () => {
+    fileInput.value = '';
+    removeFlag.value = '1';
+    avatarImg.style.display = 'none';
+    if (initials) {
+        initials.style.display = 'flex';
+    } else {
+        const fallback = document.createElement('div');
+        fallback.id = 'avatar-initials';
+        fallback.style.cssText = 'width:120px;height:120px;border-radius:50%;background:var(--gradient-warm);display:flex;align-items:center;justify-content:center;font-size:3rem;font-weight:bold;color:white;border:4px solid white;box-shadow:var(--shadow-soft);';
+        fallback.textContent = avatarImg.alt.slice(0,1).toUpperCase() || '?';
+        trigger.insertBefore(fallback, avatarImg);
+    }
+    closePopup();
+});
 
 function updateToggle(cb) {
     const track = document.getElementById('toggle-track');
     const thumb = document.getElementById('toggle-thumb');
-    if (cb.checked) {
-        track.style.background = '#FF385C';
-        thumb.style.left = '23px';
-    } else {
-        track.style.background = '#ddd';
-        thumb.style.left = '3px';
-    }
+    if (cb.checked) { track.style.background = 'var(--clr-primary)'; thumb.style.left = '23px'; }
+    else { track.style.background = 'var(--clr-border)'; thumb.style.left = '3px'; }
 }
 </script>
-</body>
-</html>
+{% endblock %}

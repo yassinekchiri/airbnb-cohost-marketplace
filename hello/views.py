@@ -10,10 +10,10 @@ from django.views.decorators.csrf import csrf_exempt
 
 from .models import (DetailedAirbnbListing, UserProfile, HostProfile, CoHostProfile,
                     MarketplaceListing, Proposal, Message, Task, UserSocialLink,
-                    DirectConversation, DirectMessage)
+                    DirectConversation, DirectMessage, Review)
 from .forms import (CustomUserCreationForm, HostProfileForm, CoHostProfileForm,
                    AddListingForm, ProposalForm, EditProposalForm, MessageForm,
-                   UserInfoForm)
+                   UserInfoForm, ReviewForm)
 import json
 import subprocess
 import os
@@ -95,11 +95,15 @@ def marketplace_home(request):
     # Unauthenticated (or missing profile) → public landing page
     listings = MarketplaceListing.objects.filter(
         status__in=['looking', 'reviewing']
-    ).select_related('host__user_profile__user')[:6]
-    cohosts = CoHostProfile.objects.select_related('user_profile__user')[:6]
+    ).select_related('host__user_profile__user').prefetch_related('tasks_needed')[:6]
+    cohosts = CoHostProfile.objects.select_related('user_profile__user', 'user_profile')[:6]
+    listings_count = MarketplaceListing.objects.filter(status__in=['looking', 'reviewing']).count()
+    cohosts_count = CoHostProfile.objects.count()
     return render(request, 'hello/marketplace_home.html', {
         'listings': listings,
         'cohosts': cohosts,
+        'listings_count': listings_count,
+        'cohosts_count': cohosts_count,
     })
 
 
@@ -146,18 +150,35 @@ def cohost_profile(request, cohost_id):
 
     conversation_proposal_id = None
     can_message_directly = False
+    can_review = False
+    review_proposal = None
+    user_review = None
+
     if request.user.is_authenticated:
         try:
-            if request.user.userprofile.role == 'host':
+            viewer = request.user.userprofile
+            if viewer.role == 'host':
                 p = Proposal.objects.filter(
-                    listing__host=request.user.userprofile.hostprofile,
+                    listing__host=viewer.hostprofile,
                     cohost=cohost,
-                ).order_by('-updated_at').values_list('id', flat=True).first()
-                conversation_proposal_id = p
-                if not p and not cohost.user_profile.restrict_messaging:
+                ).order_by('-updated_at').first()
+                if p:
+                    conversation_proposal_id = p.id
+                    if p.status == 'accepted':
+                        existing = Review.objects.filter(reviewer=viewer, proposal=p).first()
+                        if existing:
+                            user_review = existing
+                        else:
+                            can_review = True
+                            review_proposal = p
+                elif not cohost.user_profile.restrict_messaging:
                     can_message_directly = True
         except Exception:
             pass
+
+    from django.db.models import Avg
+    reviews = Review.objects.filter(reviewee=cohost.user_profile).select_related('reviewer__user')
+    avg_rating = reviews.aggregate(avg=Avg('rating'))['avg']
 
     return render(request, 'hello/cohost_profile.html', {
         'cohost': cohost,
@@ -165,6 +186,11 @@ def cohost_profile(request, cohost_id):
         'social_links': cohost.user_profile.social_links.all(),
         'conversation_proposal_id': conversation_proposal_id,
         'can_message_directly': can_message_directly,
+        'reviews': reviews,
+        'avg_rating': avg_rating,
+        'can_review': can_review,
+        'review_proposal': review_proposal,
+        'user_review': user_review,
     })
 
 
@@ -358,11 +384,20 @@ def host_dashboard(request):
             'listing'
         ).prefetch_related('cohost__capabilities').order_by('listing__title')
 
+        # Which active partnerships has this host already reviewed?
+        reviewed_proposal_ids = set(
+            Review.objects.filter(
+                reviewer=host_profile.user_profile,
+                proposal__in=active_cohosts.values_list('id', flat=True)
+            ).values_list('proposal_id', flat=True)
+        )
+
         return render(request, 'hello/host_dashboard.html', {
             'host_profile': host_profile,
             'listings': listings,
             'recent_proposals': recent_proposals,
             'active_cohosts': active_cohosts,
+            'reviewed_proposal_ids': reviewed_proposal_ids,
         })
     except UserProfile.DoesNotExist:
         messages.error(request, 'User profile not found.')
@@ -479,10 +514,15 @@ def cohost_dashboard(request):
         
         relevant_listings = relevant_listings[:6]
         
-        # Co-host's own submitted proposals
+        # Co-host's own submitted proposals (cohost-initiated, any status)
         my_proposals = cohost_profile.proposals.filter(initiated_by='cohost')
 
-        # Incoming partnership requests from hosts
+        # All active partnerships (accepted, regardless of who initiated)
+        active_partnerships = cohost_profile.proposals.filter(
+            status='accepted'
+        ).select_related('listing__host__user_profile__user', 'listing')
+
+        # Incoming partnership requests from hosts (still pending)
         incoming_requests = Proposal.objects.filter(
             cohost=cohost_profile,
             initiated_by='host',
@@ -493,17 +533,124 @@ def cohost_dashboard(request):
             'listing',
         ).order_by('-created_at')
 
+        # Which accepted partnerships has this co-host already reviewed?
+        reviewed_proposal_ids = set(
+            Review.objects.filter(
+                reviewer=user_profile,
+                proposal__in=active_partnerships.values_list('id', flat=True)
+            ).values_list('proposal_id', flat=True)
+        )
+
         return render(request, 'hello/cohost_dashboard.html', {
             'cohost_profile': cohost_profile,
             'relevant_listings': relevant_listings,
             'my_proposals': my_proposals,
+            'active_partnerships': active_partnerships,
             'incoming_requests': incoming_requests,
+            'reviewed_proposal_ids': reviewed_proposal_ids,
         })
         
     except UserProfile.DoesNotExist:
         messages.error(request, 'User profile not found.')
         return redirect('marketplace_home')
 
+
+
+def host_profile(request, host_id):
+    """Public profile page for a host, showing their info and reviews."""
+    from django.db.models import Avg
+    host = get_object_or_404(
+        HostProfile.objects.select_related('user_profile__user'),
+        id=host_id
+    )
+    reviews = Review.objects.filter(reviewee=host.user_profile).select_related('reviewer__user')
+    avg_rating = reviews.aggregate(avg=Avg('rating'))['avg']
+
+    can_review = False
+    review_proposal = None
+    user_review = None
+
+    if request.user.is_authenticated:
+        try:
+            viewer = request.user.userprofile
+            if viewer.role == 'cohost':
+                p = Proposal.objects.filter(
+                    listing__host=host,
+                    cohost=viewer.cohostprofile,
+                    status='accepted',
+                ).order_by('-updated_at').first()
+                if p:
+                    existing = Review.objects.filter(reviewer=viewer, proposal=p).first()
+                    if existing:
+                        user_review = existing
+                    else:
+                        can_review = True
+                        review_proposal = p
+        except Exception:
+            pass
+
+    listings = host.marketplace_listings.exclude(status='paused').order_by('-created_at')[:6]
+
+    return render(request, 'hello/host_profile.html', {
+        'host': host,
+        'reviews': reviews,
+        'avg_rating': avg_rating,
+        'can_review': can_review,
+        'review_proposal': review_proposal,
+        'user_review': user_review,
+        'listings': listings,
+    })
+
+
+@login_required
+def submit_review(request, proposal_id):
+    """Submit a review for a completed/active partnership."""
+    if request.method != 'POST':
+        return redirect('marketplace_home')
+
+    proposal = get_object_or_404(Proposal, id=proposal_id)
+
+    if proposal.status != 'accepted':
+        messages.error(request, 'Reviews can only be left for active partnerships.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+
+    try:
+        reviewer = request.user.userprofile
+    except UserProfile.DoesNotExist:
+        messages.error(request, 'Profile not found.')
+        return redirect('marketplace_home')
+
+    host_up = proposal.listing.host.user_profile
+    cohost_up = proposal.cohost.user_profile
+
+    if reviewer == host_up:
+        reviewee = cohost_up
+    elif reviewer == cohost_up:
+        reviewee = host_up
+    else:
+        messages.error(request, 'You are not part of this partnership.')
+        return redirect('marketplace_home')
+
+    if Review.objects.filter(reviewer=reviewer, proposal=proposal).exists():
+        messages.error(request, 'You have already reviewed this partnership.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+
+    rating = request.POST.get('rating', '').strip()
+    comment = request.POST.get('comment', '').strip()
+
+    if not rating or not rating.isdigit() or int(rating) not in range(1, 6):
+        messages.error(request, 'Please select a rating between 1 and 5.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+
+    Review.objects.create(
+        reviewer=reviewer,
+        reviewee=reviewee,
+        proposal=proposal,
+        rating=int(rating),
+        comment=comment,
+    )
+    messages.success(request, 'Your review has been submitted. Thank you!')
+    return redirect(request.META.get('HTTP_REFERER', '/'))
 
 
 def test_csrf(request):
@@ -1173,6 +1320,34 @@ def edit_listing(request, listing_id):
         'existing_task_ids_json': json.dumps(list(existing_ids)),
         'source_label': source_label,
     })
+
+
+@login_required
+def cohost_end_partnership(request, proposal_id):
+    """Co-host withdraws from an active partnership"""
+    if request.method != 'POST':
+        return redirect('cohost_dashboard')
+    proposal = get_object_or_404(Proposal, id=proposal_id)
+    try:
+        cohost_profile = request.user.userprofile.cohostprofile
+        if proposal.cohost != cohost_profile:
+            messages.error(request, 'Access denied.')
+            return redirect('cohost_dashboard')
+    except Exception:
+        messages.error(request, 'Access denied.')
+        return redirect('cohost_dashboard')
+
+    if proposal.status != 'accepted':
+        messages.error(request, 'This partnership is not active.')
+        return redirect('cohost_dashboard')
+
+    host_name = proposal.listing.host.user_profile.user.get_full_name() or proposal.listing.host.user_profile.user.username
+    proposal.status = 'withdrawn'
+    proposal.save()
+    proposal.listing.status = 'looking'
+    proposal.listing.save()
+    messages.success(request, f'You have left the partnership with {host_name}. Their listing is now open again.')
+    return redirect('cohost_dashboard')
 
 
 @login_required
