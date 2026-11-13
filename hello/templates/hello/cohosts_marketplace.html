@@ -1,7 +1,7 @@
 {% extends 'hello/base.html' %}
 {% load dict_filters %}
 
-{% block title %}Browse Co-Hosts — Co-Host Marketplace{% endblock %}
+{% block title %}Browse Co-Hosts — CoHostr{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -114,7 +114,7 @@
           <div style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.15);border:3px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 0.875rem;">👤</div>
           <div style="font-size:1.1rem;font-weight:700;color:white;font-family:var(--font-display);margin-bottom:3px;">
             {{ cohost.user_profile.user.get_full_name|default:cohost.user_profile.user.username }}
-            {% if cohost.user_profile.user.email %}
+            {% if cohost.user_profile.is_verified %}
               <span style="background:hsl(145 60% 42%);color:white;font-size:10px;font-weight:800;border-radius:6px;padding:1px 6px;margin-left:6px;font-family:var(--font-body);vertical-align:middle;">✓ Verified</span>
             {% endif %}
           </div>
@@ -125,8 +125,8 @@
           <!-- Stats row -->
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem;">
             <div style="text-align:center;background:hsl(var(--muted)/0.5);padding:12px;border-radius:.75rem;">
-              <span style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--clr-primary);display:block;">{{ cohost.experience_years }}</span>
-              <div style="font-size:0.75rem;color:var(--clr-muted-fg);">Years Experience</div>
+              <span style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--clr-primary);display:block;">{% if cohost.experience_years %}{{ cohost.experience_years }}{% else %}—{% endif %}</span>
+              <div style="font-size:0.75rem;color:var(--clr-muted-fg);">Yrs Experience</div>
             </div>
             <div style="text-align:center;background:hsl(var(--muted)/0.5);padding:12px;border-radius:.75rem;">
               <span style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--clr-primary);display:block;">{{ cohost.proposals.count }}</span>
@@ -155,7 +155,10 @@
 
           <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
             {% if user.is_authenticated and user.userprofile.role == 'host' %}
-              {% if cohost.id in proposal_map %}
+              {% if cohost.id in partnered_set %}
+                <span class="btn-requested" style="background:hsl(145 60% 94%);color:hsl(145 60% 28%);border-color:hsl(145 60% 80%);">✓ Active partner</span>
+                <a href="{% url 'conversation' proposal_map|get_item:cohost.id %}" class="ds-btn ds-btn-primary ds-btn-sm">💬 Message</a>
+              {% elif cohost.id in proposal_map %}
                 <a href="{% url 'conversation' proposal_map|get_item:cohost.id %}" class="ds-btn ds-btn-primary ds-btn-sm">💬 Message</a>
               {% elif cohost.id in requested_set %}
                 <span class="btn-requested">✓ Request Sent</span>
@@ -221,19 +224,20 @@
       <p id="modal-subtitle">Select a listing and send your invitation</p>
     </div>
     <div class="modal-body">
-      <span class="modal-label">Choose a listing</span>
+      <span class="modal-label" id="choose-listing-label">Choose a listing</span>
       <div class="listing-grid" id="listing-grid"></div>
       <div class="no-listings-note" id="no-listings-note" style="display:none;">
         You have no listings currently looking for a co-host.<br>
-        <a href="{% url 'add_listing' %}" style="color:var(--clr-primary);font-weight:700;">Add a listing first</a>
+        Add a property and set it to “Looking for a co-host” to start inviting co-hosts.
       </div>
-      <span class="modal-label" style="margin-top:14px;">Message (optional)</span>
+      <span class="modal-label" id="message-label" style="margin-top:14px;">Message (optional)</span>
       <textarea id="request-message" class="modal-textarea" placeholder="Introduce yourself and explain why you'd like this co-host…"></textarea>
       <div class="modal-error" id="modal-error"></div>
     </div>
     <div class="modal-footer">
       <button class="ds-btn ds-btn-muted" id="modal-cancel-btn">Cancel</button>
       <button class="ds-btn ds-btn-primary" id="modal-send-btn">Send Request</button>
+      <a href="{% url 'add_listing' %}" class="ds-btn ds-btn-primary" id="modal-add-listing-cta" style="display:none;">➕ Add a listing first</a>
     </div>
   </div>
 </div>
@@ -253,16 +257,27 @@ const modalSub    = document.getElementById('modal-subtitle');
 const modalError  = document.getElementById('modal-error');
 const sendBtn     = document.getElementById('modal-send-btn');
 const cancelBtn   = document.getElementById('modal-cancel-btn');
+const addListingCta = document.getElementById('modal-add-listing-cta');
+const messageField  = document.getElementById('request-message');
 
 function openModal(cohostId, cohostName) {
   activeCoHostId = cohostId; activeCoHostName = cohostName;
   selectedListingId = null; modalError.textContent = '';
   modalSub.textContent = `Invite ${cohostName} to co-host one of your properties`;
-  document.getElementById('request-message').value = '';
+  messageField.value = '';
+  const chooseLabel = document.getElementById('choose-listing-label');
+  const messageLabel = document.getElementById('message-label');
   if (!HOST_LISTINGS.length) {
-    listingGrid.style.display = 'none'; noListings.style.display = 'block'; sendBtn.disabled = true;
+    // Empty state: no dead button — guide the host to add a listing instead.
+    listingGrid.style.display = 'none'; noListings.style.display = 'block';
+    chooseLabel.style.display = 'none'; messageLabel.style.display = 'none';
+    messageField.style.display = 'none';
+    sendBtn.style.display = 'none'; addListingCta.style.display = 'inline-flex';
   } else {
-    listingGrid.style.display = 'grid'; noListings.style.display = 'none'; sendBtn.disabled = true;
+    listingGrid.style.display = 'grid'; noListings.style.display = 'none';
+    chooseLabel.style.display = ''; messageLabel.style.display = '';
+    messageField.style.display = ''; addListingCta.style.display = 'none';
+    sendBtn.style.display = 'inline-flex'; sendBtn.disabled = true;
     listingGrid.innerHTML = HOST_LISTINGS.map(l => `
       <label class="listing-option" data-id="${l.id}">
         <input type="radio" name="listing_pick" value="${l.id}">

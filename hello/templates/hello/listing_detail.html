@@ -1,6 +1,6 @@
 {% extends 'hello/base.html' %}
 
-{% block title %}{{ listing.title }} — Co-Host Marketplace{% endblock %}
+{% block title %}{{ listing.title }} — CoHostr{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -76,6 +76,12 @@
 
       <!-- Property details grid -->
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:1.75rem;">
+        {% if listing.price %}
+          <div style="text-align:center;padding:1rem;background:hsl(var(--muted)/0.5);border-radius:.75rem;">
+            <strong style="display:block;font-family:var(--font-display);font-size:1.2rem;color:var(--clr-primary);">{{ listing.price }}</strong>
+            <span style="font-size:.78rem;color:var(--clr-muted-fg);">Price</span>
+          </div>
+        {% endif %}
         {% if listing.property_type %}
           <div style="text-align:center;padding:1rem;background:hsl(var(--muted)/0.5);border-radius:.75rem;">
             <strong style="display:block;font-family:var(--font-display);font-size:1rem;color:var(--clr-primary);">{{ listing.property_type }}</strong>
@@ -133,7 +139,7 @@
         <p style="font-size:.85rem;color:var(--clr-muted-fg);margin-top:.5rem;"><strong>Total Listings:</strong> {{ listing.host.total_listings }}</p>
       </div>
 
-      <a href="{{ listing.airbnb_url }}" target="_blank" class="ds-btn ds-btn-muted ds-btn-sm">View on Airbnb</a>
+      {% if listing.airbnb_url %}<a href="{{ listing.airbnb_url }}" target="_blank" rel="noopener" class="ds-btn ds-btn-muted ds-btn-sm">View on {{ listing.get_platform_display }}</a>{% endif %}
     </div>
   </div>
 
@@ -230,6 +236,7 @@
           <div class="ds-form-group">
             <label class="ds-label" for="id_rate_type">{{ form.rate_type.label }}</label>
             {{ form.rate_type }}
+            <small style="font-size:.78rem;color:var(--clr-muted-fg);margin-top:4px;display:block;">Adding a rate helps hosts evaluate your proposal. Typical co-host rates run ~$50–200/day or 10–25% of revenue.</small>
           </div>
           <div class="ds-form-group" id="rate_input_group" style="display:none;">
             <label class="ds-label" for="id_offered_rate">
@@ -282,6 +289,21 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+  // Withdraw modal — wired first so it works even when the proposal-submission
+  // form (and #tasks_input) is absent, i.e. when viewing an existing proposal.
+  var withdrawModal = document.getElementById('withdrawModal');
+  if (withdrawModal) {
+    window.showWithdrawModal = function(proposalId) {
+      withdrawModal.classList.add('show'); window.currentProposalId = proposalId;
+    };
+    window.closeWithdrawModal = function() { withdrawModal.classList.remove('show'); };
+    window.confirmWithdrawal = function() { document.getElementById('withdrawForm').submit(); };
+    withdrawModal.addEventListener('click', function(e) { if (e.target === withdrawModal) window.closeWithdrawModal(); });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && withdrawModal.classList.contains('show')) window.closeWithdrawModal();
+    });
+  }
+
   // Apply ds-input styles to Django-rendered form fields
   var rateTypeSelect = document.getElementById('rate_type_select');
   var rateInputGroup = document.getElementById('rate_input_group');
@@ -424,18 +446,6 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     });
   }
-
-  // Withdraw modal
-  var withdrawModal = document.getElementById('withdrawModal');
-  window.showWithdrawModal = function(proposalId) {
-    withdrawModal.classList.add('show'); window.currentProposalId = proposalId;
-  };
-  window.closeWithdrawModal = function() { withdrawModal.classList.remove('show'); };
-  window.confirmWithdrawal = function() { document.getElementById('withdrawForm').submit(); };
-  window.addEventListener('click', function(e) { if (e.target === withdrawModal) closeWithdrawModal(); });
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && withdrawModal.classList.contains('show')) closeWithdrawModal();
-  });
 });
 </script>
 {% endblock %}

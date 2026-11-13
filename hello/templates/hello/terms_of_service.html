@@ -1,0 +1,98 @@
+{% extends 'hello/base.html' %}
+
+{% block title %}Terms of Service — CoHostr{% endblock %}
+
+{% block extra_css %}
+<style>
+.legal-hero {
+    background: var(--gradient-dark);
+    padding: 3.5rem 1.25rem 4rem;
+    text-align: center;
+    position: relative; overflow: hidden;
+}
+.legal-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, hsl(var(--primary)/0.2) 0%, transparent 60%);
+}
+.legal-hero h1 { font-family: var(--font-display); font-size: 2.25rem; font-weight: 800; color: white; position: relative; margin-bottom: .5rem; }
+.legal-hero p { color: rgba(255,255,255,0.6); font-size: .95rem; position: relative; }
+.legal-body { max-width: 780px; margin: 3rem auto 5rem; padding: 0 1.25rem; }
+.legal-body h2 { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--clr-fg); margin: 2.5rem 0 .75rem; }
+.legal-body p, .legal-body li { font-size: .93rem; color: var(--clr-muted-fg); line-height: 1.8; margin-bottom: .75rem; }
+.legal-body ul { padding-left: 1.5rem; margin-bottom: .75rem; }
+.legal-body a { color: var(--clr-primary); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="legal-hero">
+  <div style="position:relative;">
+    <h1>Terms of Service</h1>
+    <p>Last updated: June 14, 2026</p>
+  </div>
+</div>
+
+<div class="legal-body">
+  <p>Please read these Terms of Service ("Terms") carefully before using CoHostr. By accessing or using our platform, you agree to be bound by these Terms.</p>
+
+  <h2>1. Acceptance of Terms</h2>
+  <p>By creating an account or using CoHostr in any way, you confirm that you are at least 18 years old, have read and agree to these Terms, and have the legal authority to enter into a binding agreement.</p>
+
+  <h2>2. Description of Service</h2>
+  <p>CoHostr is a marketplace platform that connects Airbnb hosts with co-hosts who can assist in managing short-term rental properties. CoHostr provides the technology platform; all co-hosting arrangements are made directly between hosts and co-hosts.</p>
+
+  <h2>3. User Accounts</h2>
+  <ul>
+    <li>You are responsible for maintaining the confidentiality of your account credentials.</li>
+    <li>You are responsible for all activity that occurs under your account.</li>
+    <li>You must provide accurate and complete information when creating your account.</li>
+    <li>You may not share your account with others or create accounts for the purpose of abuse.</li>
+  </ul>
+
+  <h2>4. Prohibited Conduct</h2>
+  <p>You agree not to:</p>
+  <ul>
+    <li>Post false, misleading, or fraudulent listings or profiles</li>
+    <li>Harass, threaten, or harm other users</li>
+    <li>Scrape or extract data from CoHostr without written permission</li>
+    <li>Attempt to gain unauthorized access to any part of the platform</li>
+    <li>Use CoHostr to send unsolicited commercial communications (spam)</li>
+    <li>Violate any applicable law or regulation</li>
+  </ul>
+
+  <h2>5. Co-Hosting Arrangements</h2>
+  <p>CoHostr facilitates connections between hosts and co-hosts but is not a party to any co-hosting agreement. Hosts and co-hosts are solely responsible for:</p>
+  <ul>
+    <li>Negotiating and agreeing on the terms of their partnership</li>
+    <li>Compliance with Airbnb's terms of service regarding co-hosting</li>
+    <li>Any financial arrangements, including payment for co-hosting services</li>
+    <li>Ensuring they have appropriate insurance and licenses</li>
+  </ul>
+
+  <h2>6. Content</h2>
+  <p>You retain ownership of content you post on CoHostr (profile information, listing descriptions, messages). By posting content, you grant CoHostr a non-exclusive, royalty-free license to display and distribute that content on the platform.</p>
+  <p>You are solely responsible for the content you post. CoHostr does not endorse or verify user-posted content.</p>
+
+  <h2>7. Intellectual Property</h2>
+  <p>The CoHostr platform, including its design, code, and brand assets, is owned by CoHostr and protected by intellectual property laws. You may not copy, modify, or distribute our platform without written permission.</p>
+
+  <h2>8. Disclaimers</h2>
+  <p>CoHostr is provided "as is" without warranties of any kind. We do not guarantee the accuracy of user profiles, listings, or reviews. We do not endorse any host or co-host and are not responsible for their conduct.</p>
+
+  <h2>9. Limitation of Liability</h2>
+  <p>To the maximum extent permitted by law, CoHostr shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the platform, including damages from co-hosting arrangements gone wrong.</p>
+
+  <h2>10. Termination</h2>
+  <p>We reserve the right to suspend or terminate any account that violates these Terms, without notice or liability. You may delete your account at any time by <a href="{% url 'contact' %}">contacting us</a>.</p>
+
+  <h2>11. Changes to Terms</h2>
+  <p>We may update these Terms from time to time. Continued use of CoHostr after changes constitutes acceptance of the new Terms. We will notify users of material changes via email.</p>
+
+  <h2>12. Governing Law</h2>
+  <p>These Terms are governed by applicable laws. Any disputes will be resolved through good-faith negotiation before pursuing other remedies.</p>
+
+  <h2>13. Contact</h2>
+  <p>For questions about these Terms, please <a href="{% url 'contact' %}">contact us</a>.</p>
+</div>
+{% endblock %}

@@ -66,8 +66,13 @@ class UserProfile(models.Model):
     
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     phone_number = models.CharField(max_length=20, blank=True)
-    role = models.CharField(max_length=10, choices=USER_ROLES)
+    role = models.CharField(max_length=10, choices=USER_ROLES, db_index=True)
     profile_photo = models.ImageField(upload_to='profile_photos/', blank=True, null=True)
+    is_verified = models.BooleanField(
+        default=False,
+        help_text="Manually set by admins after identity/profile verification",
+        db_index=True,
+    )
     restrict_messaging = models.BooleanField(
         default=False,
         help_text="When enabled, only users with an active proposal or partnership can message you."
@@ -95,6 +100,11 @@ class CoHostProfile(models.Model):
     experience_years = models.IntegerField(default=0, help_text="Years of co-hosting experience")
     hourly_rate = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Your daily rate (optional)")
     capabilities = models.ManyToManyField('Task', blank=True, related_name='cohost_profiles', help_text="Tasks/services you offer")
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Inactive co-host profiles are hidden from the public marketplace",
+        db_index=True,
+    )
     
     def __str__(self):
         return f"Co-Host: {self.user_profile.user.get_full_name() or self.user_profile.user.username}"
@@ -108,19 +118,33 @@ class MarketplaceListing(models.Model):
         ('found', 'Co-Host Found'),
         ('paused', 'Paused'),
     ]
-    
+
+    PLATFORM_CHOICES = [
+        ('airbnb', 'Airbnb'),
+        ('booking', 'Booking.com'),
+        ('vrbo', 'Vrbo'),
+        ('expedia', 'Expedia'),
+        ('other', 'Other / Direct'),
+    ]
+
     # Link to host
     host = models.ForeignKey(HostProfile, on_delete=models.CASCADE, related_name='marketplace_listings')
-    
-    # Basic listing info (from scraper)
+
+    # Which platform this property is listed on
+    platform = models.CharField(max_length=20, choices=PLATFORM_CHOICES, default='airbnb', db_index=True)
+
+    # Basic listing info (from scraper or manual entry)
     title = models.CharField(max_length=500)
     location = models.CharField(max_length=200)
-    airbnb_url = models.URLField(max_length=1000, unique=True)
+    # URL of the listing on its source platform. Null for manual entries with no URL.
+    airbnb_url = models.URLField(max_length=1000, unique=True, blank=True, null=True)
+    # Nightly price as displayed (free text to accommodate currency symbols / ranges)
+    price = models.CharField(max_length=50, blank=True, help_text="Nightly price, e.g. $120/night")
     main_photo_url = models.URLField(max_length=1000, blank=True)
     main_photo_path = models.CharField(max_length=500, blank=True, help_text="Local path to downloaded listing image")
     
     # Marketplace specific
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='looking')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='looking', db_index=True)
     description = models.TextField(blank=True, help_text="Additional details about the co-hosting opportunity")
     co_host_requirements = models.TextField(blank=True, help_text="What kind of co-host are you looking for?")
     
@@ -140,6 +164,12 @@ class MarketplaceListing(models.Model):
     tasks_needed = models.ManyToManyField(
         'Task', blank=True, related_name='listings_needed',
         help_text="Tasks you need your co-host to handle"
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Inactive listings are hidden from all public pages",
+        db_index=True,
     )
 
     # Timestamps
@@ -212,7 +242,7 @@ class Proposal(models.Model):
     initiated_by = models.CharField(max_length=10, choices=INITIATED_BY_CHOICES, default='cohost',
                                     help_text="Who initiated this proposal")
 
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', db_index=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

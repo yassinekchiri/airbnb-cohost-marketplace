@@ -20,6 +20,22 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name='hello/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(http_method_names=['get', 'post'], next_page='marketplace_home'), name='logout'),
     path('login-redirect/', views.custom_login_redirect, name='custom_login_redirect'),
+
+    # Password reset
+    path('password-reset/', auth_views.PasswordResetView.as_view(
+        template_name='hello/password_reset.html',
+        email_template_name='hello/emails/password_reset_email.txt',
+        subject_template_name='hello/emails/password_reset_subject.txt',
+    ), name='password_reset'),
+    path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(
+        template_name='hello/password_reset_done.html',
+    ), name='password_reset_done'),
+    path('password-reset/confirm/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(
+        template_name='hello/password_reset_confirm.html',
+    ), name='password_reset_confirm'),
+    path('password-reset/complete/', auth_views.PasswordResetCompleteView.as_view(
+        template_name='hello/password_reset_complete.html',
+    ), name='password_reset_complete'),
     
     # Host Dashboard
     path('host/dashboard/', views.host_dashboard, name='host_dashboard'),
@@ -51,6 +67,11 @@ urlpatterns = [
     path('messages/<int:proposal_id>/', views.conversation, name='conversation'),
     path('messages/direct/<int:conversation_id>/', views.direct_conversation, name='direct_conversation'),
     path('contact/<int:cohost_id>/', views.contact_user, name='contact_user'),
+
+    # Static pages
+    path('privacy/', views.privacy_policy, name='privacy_policy'),
+    path('terms/', views.terms_of_service, name='terms_of_service'),
+    path('contact/', views.contact, name='contact'),
 
     # API endpoints
     path('api/tasks/autocomplete/', views.task_autocomplete, name='task_autocomplete'),

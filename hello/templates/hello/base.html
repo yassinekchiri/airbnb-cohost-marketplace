@@ -1,0 +1,60 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Mark JS as available before first paint so .ds-reveal hides only when JS can reveal it -->
+  <script>document.documentElement.classList.add('js');</script>
+  <title>{% block title %}CoHostr{% endblock %}</title>
+  <!-- Google Fonts: Playfair Display (display) + DM Sans (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+  <!-- Design System -->
+  <link rel="stylesheet" href="{% static 'hello/ds.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+{% include 'hello/_nav.html' %}
+
+{% block content %}{% endblock %}
+
+<!-- Shared JS: scroll animations + mobile nav toggle -->
+<script>
+(function () {
+  // IntersectionObserver for .ds-reveal (Framer Motion whileInView equivalent)
+  const observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) { e.target.classList.add('visible'); }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+  const vh = window.innerHeight || document.documentElement.clientHeight;
+  document.querySelectorAll('.ds-reveal').forEach(function (el) {
+    // Reveal anything already in the initial viewport synchronously to avoid a
+    // first-paint flash (the observer fires asynchronously after load).
+    if (el.getBoundingClientRect().top < vh) {
+      el.classList.add('visible');
+    } else {
+      observer.observe(el);
+    }
+  });
+
+  // Mobile nav toggle (AnimatePresence-style height animation via CSS)
+  var toggle = document.getElementById('ds-nav-toggle');
+  var links  = document.getElementById('ds-nav-links');
+  if (toggle && links) {
+    toggle.addEventListener('click', function () { links.classList.toggle('open'); });
+    document.addEventListener('click', function (e) {
+      if (!toggle.contains(e.target) && !links.contains(e.target)) {
+        links.classList.remove('open');
+      }
+    });
+  }
+})();
+</script>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

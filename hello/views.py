@@ -6,18 +6,68 @@ from django.contrib import messages
 from django.db.models import Q
 from django.core.paginator import Paginator
 from django.views.decorators.cache import never_cache
-from django.views.decorators.csrf import csrf_exempt
+from django_ratelimit.decorators import ratelimit
 
 from .models import (DetailedAirbnbListing, UserProfile, HostProfile, CoHostProfile,
                     MarketplaceListing, Proposal, Message, Task, UserSocialLink,
                     DirectConversation, DirectMessage, Review)
 from .forms import (CustomUserCreationForm, HostProfileForm, CoHostProfileForm,
-                   AddListingForm, ProposalForm, EditProposalForm, MessageForm,
+                   AddListingForm, ManualListingForm, ProposalForm, EditProposalForm, MessageForm,
                    UserInfoForm, ReviewForm)
 import json
 import subprocess
 import os
+import logging
+import ipaddress
+from urllib.parse import urlparse
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
+
+_MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
+_ALLOWED_IMAGE_TYPES = {'image/jpeg', 'image/png', 'image/webp', 'image/gif'}
+
+def _validate_scraper_url(url):
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ('http', 'https'):
+            raise ValueError("URL must use http or https.")
+        if not parsed.netloc or 'airbnb.com' not in parsed.netloc:
+            raise ValueError("URL must be an Airbnb listing URL.")
+        # Block private/reserved IPs to prevent SSRF
+        try:
+            ip = ipaddress.ip_address(parsed.hostname)
+            if ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local:
+                raise ValueError("Invalid URL target.")
+        except ValueError as e:
+            # If it raises here because of the IP check, re-raise it
+            if "Invalid URL" in str(e):
+                raise
+            # Otherwise hostname is a domain name, not an IP — that's fine
+    except ValueError:
+        raise
+    except Exception:
+        raise ValueError("Invalid URL format.")
+
+
+def _validate_image_upload(f):
+    if f.size > _MAX_UPLOAD_BYTES:
+        raise ValueError("File too large. Maximum size is 5 MB.")
+    if f.content_type not in _ALLOWED_IMAGE_TYPES:
+        raise ValueError(f"Invalid file type '{f.content_type}'. Allowed: JPEG, PNG, WEBP, GIF.")
+
+
+def _save_listing_photo(photo_file):
+    """Save an uploaded listing photo and return its MEDIA_ROOT-relative path."""
+    import uuid as _uuid
+    ext = os.path.splitext(photo_file.name)[1].lower() or '.jpg'
+    fname = f"listing_{_uuid.uuid4().hex[:16]}{ext}"
+    save_dir = os.path.join(settings.MEDIA_ROOT, 'listings', 'listing_images')
+    os.makedirs(save_dir, exist_ok=True)
+    with open(os.path.join(save_dir, fname), 'wb') as fh:
+        for chunk in photo_file.chunks():
+            fh.write(chunk)
+    return os.path.join('listings', 'listing_images', fname)
 
 def hello_world(request):
     detailed_listing = None
@@ -39,8 +89,9 @@ def hello_world(request):
                     detailed_data = scrape_single_airbnb_listing(listing_url, headless=True)
                     detailed_listing = detailed_data
                     scrape_performed = True
-                except Exception as e:
-                    error = f"Scraping error: {str(e)}"
+                except Exception:
+                    logger.exception("Scrape failed for URL: %s", listing_url)
+                    error = "Scraping failed. Please check the URL and try again."
     
     return render(request, 'hello/index.html', {
         'detailed_listing': detailed_listing,
@@ -50,6 +101,7 @@ def hello_world(request):
 
 
 # Authentication Views
+@ratelimit(key='ip', rate='20/h', method='POST', block=True)
 def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
@@ -72,7 +124,7 @@ def custom_login_redirect(request):
                 return redirect('host_dashboard')
             elif user_profile.role == 'cohost':
                 return redirect('cohost_dashboard')
-    except:
+    except UserProfile.DoesNotExist:
         pass
     return redirect('marketplace_home')
 
@@ -89,21 +141,23 @@ def marketplace_home(request):
             elif role == 'host':
                 # Hosts look for co-hosts to hire
                 return redirect('cohosts_marketplace')
-        except Exception:
+        except UserProfile.DoesNotExist:
             pass
 
     # Unauthenticated (or missing profile) → public landing page
     listings = MarketplaceListing.objects.filter(
-        status__in=['looking', 'reviewing']
+        status__in=['looking', 'reviewing'], is_active=True
     ).select_related('host__user_profile__user').prefetch_related('tasks_needed')[:6]
-    cohosts = CoHostProfile.objects.select_related('user_profile__user', 'user_profile')[:6]
-    listings_count = MarketplaceListing.objects.filter(status__in=['looking', 'reviewing']).count()
-    cohosts_count = CoHostProfile.objects.count()
+    cohosts = CoHostProfile.objects.filter(is_active=True).select_related('user_profile__user', 'user_profile')[:6]
+    listings_count = MarketplaceListing.objects.filter(status__in=['looking', 'reviewing'], is_active=True).count()
+    cohosts_count = CoHostProfile.objects.filter(is_active=True).count()
+    partnerships_count = Proposal.objects.filter(status='accepted').count()
     return render(request, 'hello/marketplace_home.html', {
         'listings': listings,
         'cohosts': cohosts,
         'listings_count': listings_count,
         'cohosts_count': cohosts_count,
+        'partnerships_count': partnerships_count,
     })
 
 
@@ -113,8 +167,8 @@ def listings_marketplace(request):
     
     from django.db.models import Case, When, Value, IntegerField
     listings = MarketplaceListing.objects.filter(
-        status__in=['looking', 'reviewing', 'found']
-    ).select_related('host__user_profile__user').annotate(
+        status__in=['looking', 'reviewing', 'found'], is_active=True
+    ).select_related('host__user_profile__user').prefetch_related('tasks_needed').annotate(
         status_order=Case(
             When(status='looking', then=Value(0)),
             When(status='reviewing', then=Value(1)),
@@ -125,12 +179,18 @@ def listings_marketplace(request):
     ).order_by('status_order', '-updated_at')
 
     if location_filter:
-        listings = listings.filter(location__icontains=location_filter)
+        listings = listings.filter(
+            Q(location__icontains=location_filter) |
+            Q(title__icontains=location_filter) |
+            Q(description__icontains=location_filter) |
+            Q(co_host_requirements__icontains=location_filter) |
+            Q(property_type__icontains=location_filter)
+        )
 
     paginator = Paginator(listings, 12)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     return render(request, 'hello/listings_marketplace.html', {
         'page_obj': page_obj,
         'location_filter': location_filter
@@ -173,7 +233,7 @@ def cohost_profile(request, cohost_id):
                             review_proposal = p
                 elif not cohost.user_profile.restrict_messaging:
                     can_message_directly = True
-        except Exception:
+        except (UserProfile.DoesNotExist, HostProfile.DoesNotExist):
             pass
 
     from django.db.models import Avg
@@ -198,10 +258,15 @@ def cohosts_marketplace(request):
     """Public view of all co-hosts"""
     location_filter = request.GET.get('location', '')
 
-    cohosts = CoHostProfile.objects.select_related('user_profile__user').prefetch_related('capabilities')
+    cohosts = CoHostProfile.objects.filter(is_active=True).select_related('user_profile__user').prefetch_related('capabilities')
 
     if location_filter:
-        cohosts = cohosts.filter(locations__icontains=location_filter)
+        cohosts = cohosts.filter(
+            Q(locations__icontains=location_filter) |
+            Q(bio__icontains=location_filter) |
+            Q(user_profile__user__first_name__icontains=location_filter) |
+            Q(user_profile__user__last_name__icontains=location_filter)
+        )
 
     paginator = Paginator(cohosts, 12)
     page_number = request.GET.get('page')
@@ -210,6 +275,7 @@ def cohosts_marketplace(request):
     # For hosts: proposal map, pending requests, open-messaging eligibility
     proposal_map    = {}   # cohost_id -> proposal_id  (can message)
     requested_set   = set()  # cohost_ids with a pending host-initiated request
+    partnered_set   = set()  # cohost_ids with an accepted (active) partnership
     open_messaging  = set()
     host_listings_json = '[]'
 
@@ -226,6 +292,8 @@ def cohosts_marketplace(request):
 
                 for p in all_proposals:
                     cid = p['cohost_id']
+                    if p['status'] == 'accepted':
+                        partnered_set.add(cid)
                     if p['status'] == 'accepted' or p['initiated_by'] == 'cohost':
                         if cid not in proposal_map:
                             proposal_map[cid] = p['id']
@@ -250,7 +318,7 @@ def cohosts_marketplace(request):
                     'location': l.location,
                     'photo':    l.get_main_photo_url() or '',
                 } for l in eligible])
-        except Exception:
+        except (UserProfile.DoesNotExist, HostProfile.DoesNotExist):
             pass
 
     return render(request, 'hello/cohosts_marketplace.html', {
@@ -259,6 +327,7 @@ def cohosts_marketplace(request):
         'proposal_map':       proposal_map,
         'open_messaging':     open_messaging,
         'requested_set':      requested_set,
+        'partnered_set':      partnered_set,
         'host_listings_json': host_listings_json,
     })
 
@@ -280,9 +349,9 @@ def listing_detail(request, listing_id):
                     listing=listing, cohost=cohost_profile
                 ).first()
                 can_propose = existing_proposal is None and listing.status in ['looking', 'reviewing']
-        except:
+        except (UserProfile.DoesNotExist, CoHostProfile.DoesNotExist):
             pass
-    
+
     # Handle proposal submission
     if request.method == 'POST' and can_propose:
         form = ProposalForm(request.POST)
@@ -339,7 +408,7 @@ def listing_detail(request, listing_id):
         try:
             caps = request.user.userprofile.cohostprofile.capabilities.values('id', 'name')
             cohost_profile_tasks = list(caps)
-        except Exception:
+        except (UserProfile.DoesNotExist, CoHostProfile.DoesNotExist):
             pass
 
     return render(request, 'hello/listing_detail.html', {
@@ -363,7 +432,7 @@ def host_dashboard(request):
             return redirect('marketplace_home')
         
         host_profile = user_profile.hostprofile
-        listings = host_profile.marketplace_listings.all()
+        listings = host_profile.marketplace_listings.prefetch_related('tasks_needed', 'proposals').all()
         
         # Get recent pending proposals
         recent_proposals = Proposal.objects.filter(
@@ -406,7 +475,7 @@ def host_dashboard(request):
 
 @login_required
 @never_cache
-@csrf_exempt
+@ratelimit(key='user', rate='5/h', method='POST', block=True)
 def add_listing(request):
     """Host adds a new listing using the scraper"""
     try:
@@ -416,25 +485,68 @@ def add_listing(request):
             return redirect('marketplace_home')
         
         host_profile = user_profile.hostprofile
-        
+
+        form = AddListingForm()
+        manual_form = ManualListingForm()
+        # Which tab to show on (re)render: 'scrape' (default) or 'manual'
+        active_mode = 'scrape'
+
+        if request.method == 'POST' and request.POST.get('mode') == 'manual':
+            active_mode = 'manual'
+            manual_form = ManualListingForm(request.POST, request.FILES)
+            if manual_form.is_valid():
+                listing = manual_form.save(commit=False)
+                listing.host = host_profile
+
+                # Optional photo upload
+                photo = manual_form.cleaned_data.get('photo')
+                if photo:
+                    try:
+                        _validate_image_upload(photo)
+                        listing.main_photo_path = _save_listing_photo(photo)
+                    except ValueError as ve:
+                        manual_form.add_error('photo', str(ve))
+                        return render(request, 'hello/add_listing.html', {
+                            'form': form, 'manual_form': manual_form, 'active_mode': 'manual',
+                        })
+
+                # Optional listing URL (any platform) — guard the unique constraint
+                listing_url = manual_form.cleaned_data.get('listing_url') or None
+                if listing_url and MarketplaceListing.objects.filter(airbnb_url=listing_url).exists():
+                    manual_form.add_error('listing_url', 'This listing URL is already in the marketplace.')
+                    return render(request, 'hello/add_listing.html', {
+                        'form': form, 'manual_form': manual_form, 'active_mode': 'manual',
+                    })
+                listing.airbnb_url = listing_url
+                listing.save()
+                manual_form.save_m2m()
+
+                host_profile.total_listings = host_profile.marketplace_listings.count()
+                host_profile.save()
+
+                messages.success(request, f'Listing "{listing.title}" added successfully!')
+                return redirect('host_dashboard')
+            return render(request, 'hello/add_listing.html', {
+                'form': form, 'manual_form': manual_form, 'active_mode': 'manual',
+            })
+
         if request.method == 'POST':
-            print(f"POST data keys: {list(request.POST.keys())}")
-            print(f"CSRF token in POST: {'csrfmiddlewaretoken' in request.POST}")
-            print(f"Host header: {request.META.get('HTTP_HOST', 'unknown')}")
-            print(f"Origin header: {request.META.get('HTTP_ORIGIN', 'unknown')}")
-            print(f"Referer header: {request.META.get('HTTP_REFERER', 'unknown')}")
-            print(f"POST data: {request.POST}")
             form = AddListingForm(request.POST)
-            print(f"Form is valid: {form.is_valid()}")
-            print(f"Form errors: {form.errors}")
             if form.is_valid():
                 airbnb_url = form.cleaned_data['airbnb_url']
-                
+
+                # Validate URL safety (SSRF protection)
+                try:
+                    _validate_scraper_url(airbnb_url)
+                except ValueError as ve:
+                    messages.error(request, str(ve))
+                    return render(request, 'hello/add_listing.html', {'form': form, 'manual_form': manual_form, 'active_mode': 'scrape'})
+
                 # Check if listing already exists
                 if MarketplaceListing.objects.filter(airbnb_url=airbnb_url).exists():
                     messages.error(request, 'This listing is already in the marketplace.')
-                    return render(request, 'hello/add_listing.html', {'form': form})
-                
+                    return render(request, 'hello/add_listing.html', {'form': form, 'manual_form': manual_form, 'active_mode': 'scrape'})
+
                 try:
                     # Use standalone scraper script
                     script_path = os.path.join(settings.BASE_DIR, 'standalone_scraper.py')
@@ -451,6 +563,7 @@ def add_listing(request):
                     # Create marketplace listing with downloaded images
                     listing = MarketplaceListing.objects.create(
                         host=host_profile,
+                        platform='airbnb',
                         title=scraped_data.get('title', 'Untitled Listing'),
                         location=scraped_data.get('location', ''),
                         airbnb_url=airbnb_url,
@@ -475,13 +588,20 @@ def add_listing(request):
                     messages.success(request, f'Listing "{listing.title}" added successfully!')
                     return redirect('host_dashboard')
                     
-                except Exception as e:
-                    messages.error(request, f'Error scraping listing: {str(e)}')
-        else:
-            form = AddListingForm()
-        
-        return render(request, 'hello/add_listing.html', {'form': form})
-        
+                except subprocess.TimeoutExpired:
+                    logger.error("Scraper timed out for URL: %s (user %s)", airbnb_url, request.user.id)
+                    messages.error(request, 'Scraping timed out. The Airbnb listing may be unavailable. Please try again.')
+                except json.JSONDecodeError:
+                    logger.error("Scraper returned invalid JSON for URL: %s", airbnb_url)
+                    messages.error(request, 'Could not read listing data. Please try again.')
+                except Exception:
+                    logger.exception("Unexpected error scraping URL %s for user %s", airbnb_url, request.user.id)
+                    messages.error(request, 'An unexpected error occurred while adding your listing. Please try again.')
+
+        return render(request, 'hello/add_listing.html', {
+            'form': form, 'manual_form': manual_form, 'active_mode': active_mode,
+        })
+
     except UserProfile.DoesNotExist:
         messages.error(request, 'User profile not found.')
         return redirect('marketplace_home')
@@ -498,24 +618,50 @@ def cohost_dashboard(request):
             return redirect('marketplace_home')
         
         cohost_profile = user_profile.cohostprofile
-        
-        # Get relevant listings based on co-host's locations
+
+        # Open listings the co-host hasn't already proposed to
+        already_proposed_ids = cohost_profile.proposals.values_list('listing_id', flat=True)
+        open_listings = MarketplaceListing.objects.filter(
+            status__in=['looking', 'reviewing'],
+            is_active=True,
+        ).exclude(id__in=already_proposed_ids)
+
+        # Prefer listings matching the co-host's service areas...
         location_keywords = [loc.strip() for loc in cohost_profile.locations.split(',') if loc.strip()]
-        
-        relevant_listings = MarketplaceListing.objects.filter(
-            status__in=['looking', 'reviewing']
-        )
-        
+        relevant_listings = open_listings
         if location_keywords:
             location_q = Q()
             for keyword in location_keywords:
                 location_q |= Q(location__icontains=keyword)
-            relevant_listings = relevant_listings.filter(location_q)
-        
-        relevant_listings = relevant_listings[:6]
+            location_matched = open_listings.filter(location_q)
+            # ...but fall back to all open listings when nothing matches (e.g. listings
+            # with no location yet) so the co-host always sees real opportunities.
+            relevant_listings = location_matched if location_matched.exists() else open_listings
+
+        relevant_listings = relevant_listings.order_by('-created_at')[:6]
         
         # Co-host's own submitted proposals (cohost-initiated, any status)
-        my_proposals = cohost_profile.proposals.filter(initiated_by='cohost')
+        my_proposals = cohost_profile.proposals.filter(initiated_by='cohost').select_related(
+            'listing', 'listing__host__user_profile__user'
+        ).prefetch_related('tasks')
+
+        # Real status counts for the stat cards (template attr lookups like
+        # my_proposals.accepted silently render 0, which is misleading).
+        accepted_count = my_proposals.filter(status='accepted').count()
+        pending_count = my_proposals.filter(status='pending').count()
+
+        # Explicit profile-completeness checklist — list exactly what's missing.
+        profile_missing = []
+        if not cohost_profile.bio:
+            profile_missing.append('bio')
+        if not cohost_profile.locations:
+            profile_missing.append('service areas')
+        if not cohost_profile.experience_years:
+            profile_missing.append('years of experience')
+        if not cohost_profile.hourly_rate:
+            profile_missing.append('daily rate')
+        if not user_profile.profile_photo:
+            profile_missing.append('profile photo')
 
         # All active partnerships (accepted, regardless of who initiated)
         active_partnerships = cohost_profile.proposals.filter(
@@ -545,6 +691,9 @@ def cohost_dashboard(request):
             'cohost_profile': cohost_profile,
             'relevant_listings': relevant_listings,
             'my_proposals': my_proposals,
+            'accepted_count': accepted_count,
+            'pending_count': pending_count,
+            'profile_missing': profile_missing,
             'active_partnerships': active_partnerships,
             'incoming_requests': incoming_requests,
             'reviewed_proposal_ids': reviewed_proposal_ids,
@@ -586,7 +735,7 @@ def host_profile(request, host_id):
                     else:
                         can_review = True
                         review_proposal = p
-        except Exception:
+        except (UserProfile.DoesNotExist, CoHostProfile.DoesNotExist):
             pass
 
     listings = host.marketplace_listings.exclude(status='paused').order_by('-created_at')[:6]
@@ -658,7 +807,7 @@ def test_csrf(request):
     return render(request, 'hello/test_form.html')
 
 
-@csrf_exempt
+@ratelimit(key='ip', rate='60/m', method='GET', block=True)
 def task_autocomplete(request):
     """API endpoint for task autocomplete suggestions"""
     if request.method == 'GET':
@@ -719,7 +868,7 @@ def edit_proposal(request, proposal_id):
         if proposal.status != 'pending':
             messages.error(request, 'This proposal cannot be edited.')
             return redirect('listing_detail', listing_id=proposal.listing.id)
-    except:
+    except (UserProfile.DoesNotExist, CoHostProfile.DoesNotExist):
         messages.error(request, 'Access denied.')
         return redirect('marketplace_home')
 
@@ -803,7 +952,7 @@ def accept_proposal(request, proposal_id):
         if proposal.listing.host != host_profile:
             messages.error(request, 'Access denied.')
             return redirect('host_dashboard')
-    except Exception:
+    except (UserProfile.DoesNotExist, HostProfile.DoesNotExist):
         messages.error(request, 'Access denied.')
         return redirect('host_dashboard')
 
@@ -826,7 +975,7 @@ def decline_proposal(request, proposal_id):
         if proposal.listing.host != host_profile:
             messages.error(request, 'Access denied.')
             return redirect('host_dashboard')
-    except Exception:
+    except (UserProfile.DoesNotExist, HostProfile.DoesNotExist):
         messages.error(request, 'Access denied.')
         return redirect('host_dashboard')
 
@@ -836,6 +985,7 @@ def decline_proposal(request, proposal_id):
     return redirect('host_dashboard')
 
 
+@login_required
 def withdraw_proposal(request, proposal_id):
     """Withdraw an existing proposal"""
     proposal = get_object_or_404(Proposal, id=proposal_id)
@@ -851,7 +1001,7 @@ def withdraw_proposal(request, proposal_id):
         if proposal.status != 'pending':
             messages.error(request, 'This proposal cannot be withdrawn.')
             return redirect('listing_detail', listing_id=proposal.listing.id)
-    except:
+    except (UserProfile.DoesNotExist, CoHostProfile.DoesNotExist):
         messages.error(request, 'Access denied.')
         return redirect('marketplace_home')
 
@@ -982,6 +1132,7 @@ def api_poll_direct_messages(request):
 
 
 @login_required
+@ratelimit(key='user', rate='60/h', method='POST', block=True)
 def conversation(request, proposal_id):
     proposal = get_object_or_404(
         Proposal.objects.select_related(
@@ -1087,7 +1238,7 @@ def send_partnership_request(request, cohost_id):
 
     try:
         host_profile = request.user.userprofile.hostprofile
-    except Exception:
+    except (UserProfile.DoesNotExist, HostProfile.DoesNotExist):
         return JsonResponse({'error': 'Host account required.'}, status=403)
 
     listing_id = request.POST.get('listing_id', '').strip()
@@ -1126,7 +1277,7 @@ def accept_partnership_request(request, proposal_id):
         if proposal.cohost != cohost_profile:
             messages.error(request, 'Access denied.')
             return redirect('cohost_dashboard')
-    except Exception:
+    except (UserProfile.DoesNotExist, CoHostProfile.DoesNotExist):
         messages.error(request, 'Access denied.')
         return redirect('cohost_dashboard')
 
@@ -1151,7 +1302,7 @@ def decline_partnership_request(request, proposal_id):
         if proposal.cohost != cohost_profile:
             messages.error(request, 'Access denied.')
             return redirect('cohost_dashboard')
-    except Exception:
+    except (UserProfile.DoesNotExist, CoHostProfile.DoesNotExist):
         messages.error(request, 'Access denied.')
         return redirect('cohost_dashboard')
 
@@ -1185,12 +1336,14 @@ def edit_listing(request, listing_id):
         if listing.host != host_profile:
             messages.error(request, 'Access denied.')
             return redirect('host_dashboard')
-    except Exception:
+    except (UserProfile.DoesNotExist, HostProfile.DoesNotExist):
         messages.error(request, 'Access denied.')
         return redirect('host_dashboard')
 
     # ── AJAX: re-scrape and return diff ──────────────────────────────────────
     if request.method == 'POST' and request.POST.get('action') == 'sync':
+        if not listing.airbnb_url or listing.platform != 'airbnb':
+            return JsonResponse({'error': 'This listing has no Airbnb URL to sync. Edit the details manually instead.'}, status=400)
         try:
             script_path = os.path.join(settings.BASE_DIR, 'standalone_scraper.py')
             result = subprocess.run(
@@ -1228,8 +1381,13 @@ def edit_listing(request, listing_id):
                 'raw': scraped,
                 'no_changes': len(changes) == 0,
             })
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+        except subprocess.TimeoutExpired:
+            return JsonResponse({'error': 'Scraper timed out. Please try again.'}, status=504)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Scraper returned invalid data.'}, status=500)
+        except Exception:
+            logger.exception("Sync scrape failed for listing %s", listing_id)
+            return JsonResponse({'error': 'An unexpected error occurred.'}, status=500)
 
     # ── Regular POST: save edits ──────────────────────────────────────────────
     if request.method == 'POST':
@@ -1247,9 +1405,15 @@ def edit_listing(request, listing_id):
         # Photo: new upload takes priority over URL override
         photo_file = request.FILES.get('main_photo')
         if photo_file:
+            try:
+                _validate_image_upload(photo_file)
+            except ValueError as ve:
+                messages.error(request, str(ve))
+                return redirect('edit_listing', listing_id=listing_id)
             import hashlib as _hashlib
             ext = os.path.splitext(photo_file.name)[1] or '.jpg'
-            fname = f"listing_{_hashlib.md5(listing.airbnb_url.encode()).hexdigest()[:10]}_custom{ext}"
+            seed = listing.airbnb_url or f'listing-{listing.id}'
+            fname = f"listing_{_hashlib.md5(seed.encode()).hexdigest()[:10]}_custom{ext}"
             save_dir = os.path.join(settings.MEDIA_ROOT, 'listings', 'listing_images')
             os.makedirs(save_dir, exist_ok=True)
             save_path = os.path.join(save_dir, fname)
@@ -1307,11 +1471,7 @@ def edit_listing(request, listing_id):
         if not any(p['id'] == t['id'] for p in popular_tasks):
             popular_tasks.append(t)
 
-    source_label = 'Airbnb'
-    if 'booking.com' in listing.airbnb_url:
-        source_label = 'Booking.com'
-    elif 'vrbo.com' in listing.airbnb_url:
-        source_label = 'VRBO'
+    source_label = listing.get_platform_display() if listing.platform else 'Airbnb'
 
     return render(request, 'hello/edit_listing.html', {
         'listing': listing,
@@ -1333,7 +1493,7 @@ def cohost_end_partnership(request, proposal_id):
         if proposal.cohost != cohost_profile:
             messages.error(request, 'Access denied.')
             return redirect('cohost_dashboard')
-    except Exception:
+    except (UserProfile.DoesNotExist, CoHostProfile.DoesNotExist):
         messages.error(request, 'Access denied.')
         return redirect('cohost_dashboard')
 
@@ -1361,7 +1521,7 @@ def end_partnership(request, proposal_id):
         if proposal.listing.host != host_profile:
             messages.error(request, 'Access denied.')
             return redirect('host_dashboard')
-    except Exception:
+    except (UserProfile.DoesNotExist, HostProfile.DoesNotExist):
         messages.error(request, 'Access denied.')
         return redirect('host_dashboard')
 
@@ -1401,6 +1561,15 @@ def edit_profile(request):
         role_form = RoleForm(request.POST, instance=role_profile)
 
         if user_form.is_valid() and role_form.is_valid():
+            # Validate profile photo before saving anything
+            raw_photo = request.FILES.get('profile_photo')
+            if raw_photo:
+                try:
+                    _validate_image_upload(raw_photo)
+                except ValueError as ve:
+                    messages.error(request, str(ve))
+                    return redirect('edit_profile')
+
             user = request.user
             user.first_name = user_form.cleaned_data['first_name']
             user.last_name = user_form.cleaned_data['last_name']
@@ -1488,3 +1657,35 @@ def edit_profile(request):
         'existing_links_json': json.dumps(existing_links),
         'profile_tasks_json': json.dumps(profile_tasks),
     })
+
+
+def privacy_policy(request):
+    return render(request, 'hello/privacy_policy.html')
+
+
+def terms_of_service(request):
+    return render(request, 'hello/terms_of_service.html')
+
+
+def contact(request):
+    submitted = False
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        email = request.POST.get('email', '').strip()
+        subject = request.POST.get('subject', '').strip()
+        message_body = request.POST.get('message', '').strip()
+        if name and email and message_body:
+            from django.core.mail import send_mail
+            from django.conf import settings as django_settings
+            try:
+                send_mail(
+                    subject=f'[CoHostr Contact] {subject or "New message"}',
+                    message=f'From: {name} <{email}>\n\n{message_body}',
+                    from_email=django_settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[django_settings.DEFAULT_FROM_EMAIL],
+                    fail_silently=False,
+                )
+            except Exception:
+                logger.exception('Contact form email failed')
+            submitted = True
+    return render(request, 'hello/contact.html', {'submitted': submitted})

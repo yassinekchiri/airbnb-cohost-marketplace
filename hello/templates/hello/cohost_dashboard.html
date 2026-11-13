@@ -1,6 +1,6 @@
 {% extends 'hello/base.html' %}
 
-{% block title %}Co-Host Dashboard — Co-Host Marketplace{% endblock %}
+{% block title %}Co-Host Dashboard — CoHostr{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -30,9 +30,9 @@
     <p>Your Co-Host Dashboard — Find and manage co-hosting opportunities</p>
   </div>
 
-  {% if not cohost_profile.bio or not cohost_profile.locations %}
+  {% if profile_missing %}
   <div class="ds-alert ds-alert-warning ds-reveal" style="margin-bottom:1.5rem;">
-    <strong>⚠️ Complete Your Profile</strong> — Add your bio, locations, and experience to appear in search results.
+    <strong>⚠️ Complete Your Profile</strong> — Still missing: {% for item in profile_missing %}{{ item }}{% if not forloop.last %}, {% endif %}{% endfor %}. A complete profile wins more proposals.
     <a href="{% url 'edit_profile' %}" style="color:hsl(36 80% 30%);font-weight:700;margin-left:.5rem;">Complete Profile →</a>
   </div>
   {% endif %}
@@ -44,15 +44,15 @@
       <div class="ds-stat-card-label">Total Proposals</div>
     </div>
     <div class="ds-stat-card" style="border-left-color:hsl(145 60% 42%);">
-      <span class="ds-stat-card-number" style="color:hsl(145 60% 42%);">{{ my_proposals.accepted.count|default:0 }}</span>
+      <span class="ds-stat-card-number" style="color:hsl(145 60% 42%);">{{ accepted_count }}</span>
       <div class="ds-stat-card-label">Accepted</div>
     </div>
     <div class="ds-stat-card" style="border-left-color:hsl(var(--accent));">
-      <span class="ds-stat-card-number" style="color:hsl(var(--accent));">{{ my_proposals.pending.count|default:0 }}</span>
+      <span class="ds-stat-card-number" style="color:hsl(var(--accent));">{{ pending_count }}</span>
       <div class="ds-stat-card-label">Pending</div>
     </div>
     <div class="ds-stat-card" style="border-left-color:var(--clr-host);">
-      <span class="ds-stat-card-number" style="color:var(--clr-host);">${{ cohost_profile.hourly_rate|default:"0" }}</span>
+      <span class="ds-stat-card-number" style="color:var(--clr-host);">{% if cohost_profile.hourly_rate %}${{ cohost_profile.hourly_rate }}{% else %}<span style="font-size:1rem;color:var(--clr-muted-fg);">Not set</span>{% endif %}</span>
       <div class="ds-stat-card-label">Your Daily Rate</div>
     </div>
   </div>
@@ -143,8 +143,8 @@
   {% else %}
     <div class="ds-empty ds-reveal" style="margin-bottom:2rem;">
       <div class="ds-icon-box-lg ds-icon-primary" style="margin:0 auto 1rem;"><span style="font-size:2rem;">🔍</span></div>
-      <h3>No matching opportunities found</h3>
-      <p>{% if not cohost_profile.locations %}Add your preferred locations to your profile to see relevant opportunities.{% else %}Check back later for new listings in your areas.{% endif %}</p>
+      <h3>No open opportunities right now</h3>
+      <p>You're all caught up — you've already responded to the open listings. Check back later for new properties looking for a co-host.</p>
       <a href="{% url 'listings_marketplace' %}" class="ds-btn ds-btn-primary">Browse All Listings</a>
     </div>
   {% endif %}
@@ -159,11 +159,13 @@
         <span class="ds-status ds-status-{{ proposal.status }}">{{ proposal.get_status_display }}</span>
       </div>
       <p class="proposal-meta">
-        📍 {{ proposal.listing.location }} &bull; Submitted {{ proposal.created_at|date:"M d, Y" }}
+        📍 {{ proposal.listing.location|default:"Location not set" }} &bull; Submitted {{ proposal.created_at|date:"M d, Y" }}
         {% if proposal.offered_rate and proposal.rate_type %}
           &bull; Rate: {% if proposal.rate_type == 'fixed' %}${{ proposal.offered_rate }}/day{% elif proposal.rate_type == 'percentage' %}{{ proposal.offered_rate }}% of revenue{% endif %}
         {% elif proposal.offered_rate %}
           &bull; Rate: ${{ proposal.offered_rate }}/day
+        {% else %}
+          &bull; <span style="font-style:italic;">Rate: Not specified</span>
         {% endif %}
       </p>
       <p style="color:var(--clr-muted-fg);font-size:.9rem;line-height:1.5;margin-bottom:.875rem;">{{ proposal.message|truncatewords:30 }}</p>
@@ -200,12 +202,14 @@
   <div class="ds-section-row ds-reveal"><h2>👤 Your Profile</h2></div>
   <div class="ds-card ds-reveal" style="padding:1.5rem;">
     <h3 style="font-family:var(--font-display);font-size:1.1rem;margin-bottom:.875rem;">{{ user.get_full_name|default:user.username }}</h3>
-    {% if cohost_profile.bio %}<p style="color:var(--clr-muted-fg);margin-bottom:.5rem;"><strong>Bio:</strong> {{ cohost_profile.bio }}</p>{% endif %}
-    {% if cohost_profile.locations %}<p style="color:var(--clr-muted-fg);margin-bottom:.5rem;"><strong>Locations:</strong> {{ cohost_profile.locations }}</p>{% endif %}
-    {% if cohost_profile.experience_years %}<p style="color:var(--clr-muted-fg);margin-bottom:.5rem;"><strong>Experience:</strong> {{ cohost_profile.experience_years }} years</p>{% endif %}
-    {% if cohost_profile.hourly_rate %}<p style="color:var(--clr-muted-fg);margin-bottom:.5rem;"><strong>Daily Rate:</strong> ${{ cohost_profile.hourly_rate }}/day</p>{% endif %}
-    {% if cohost_profile.airbnb_profile_url %}<p style="color:var(--clr-muted-fg);margin-bottom:.875rem;"><strong>Airbnb Profile:</strong> <a href="{{ cohost_profile.airbnb_profile_url }}" target="_blank" style="color:var(--clr-primary);">View Profile</a></p>{% endif %}
-    <a href="{% url 'edit_profile' %}" class="ds-btn ds-btn-muted ds-btn-sm">Edit Profile</a>
+    {% with notset='<span style="color:var(--clr-muted-fg);font-style:italic;">Not set</span>' %}
+    <p style="color:var(--clr-muted-fg);margin-bottom:.5rem;"><strong>Bio:</strong> {% if cohost_profile.bio %}{{ cohost_profile.bio }}{% else %}{{ notset|safe }}{% endif %}</p>
+    <p style="color:var(--clr-muted-fg);margin-bottom:.5rem;"><strong>Service Areas:</strong> {% if cohost_profile.locations %}{{ cohost_profile.locations }}{% else %}{{ notset|safe }}{% endif %}</p>
+    <p style="color:var(--clr-muted-fg);margin-bottom:.5rem;"><strong>Experience:</strong> {% if cohost_profile.experience_years %}{{ cohost_profile.experience_years }} years{% else %}{{ notset|safe }}{% endif %}</p>
+    <p style="color:var(--clr-muted-fg);margin-bottom:.5rem;"><strong>Daily Rate:</strong> {% if cohost_profile.hourly_rate %}${{ cohost_profile.hourly_rate }}/day{% else %}{{ notset|safe }}{% endif %}</p>
+    {% if cohost_profile.airbnb_profile_url %}<p style="color:var(--clr-muted-fg);margin-bottom:.875rem;"><strong>Airbnb Profile:</strong> <a href="{{ cohost_profile.airbnb_profile_url }}" target="_blank" rel="noopener" style="color:var(--clr-primary);">View Profile</a></p>{% endif %}
+    {% endwith %}
+    <a href="{% url 'edit_profile' %}" class="ds-btn ds-btn-muted ds-btn-sm" style="margin-top:.375rem;">Edit Profile</a>
   </div>
 
 </div>

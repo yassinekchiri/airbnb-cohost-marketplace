@@ -1,6 +1,6 @@
 {% extends 'hello/base.html' %}
 
-{% block title %}Host Dashboard — Co-Host Marketplace{% endblock %}
+{% block title %}Host Dashboard — CoHostr{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -130,7 +130,7 @@
             <div class="listing-actions">
               <a href="{% url 'listing_detail' listing.id %}" class="ds-btn ds-btn-primary ds-btn-sm">👁 View</a>
               <a href="{% url 'edit_listing' listing.id %}" class="ds-btn ds-btn-blue ds-btn-sm">✏️ Edit</a>
-              <a href="{{ listing.airbnb_url }}" target="_blank" class="ds-btn ds-btn-muted ds-btn-sm">🔗 Airbnb</a>
+              {% if listing.airbnb_url %}<a href="{{ listing.airbnb_url }}" target="_blank" rel="noopener" class="ds-btn ds-btn-muted ds-btn-sm">🔗 {{ listing.get_platform_display }}</a>{% endif %}
               <span style="font-size:0.78rem;color:var(--clr-muted-fg);">Added {{ listing.created_at|date:"M d, Y" }}</span>
             </div>
           </div>

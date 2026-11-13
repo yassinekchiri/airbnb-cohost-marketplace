@@ -1,7 +1,7 @@
 {% extends 'hello/base.html' %}
 {% load static %}
 
-{% block title %}Co-Host Marketplace — Find Your Perfect Co-Host{% endblock %}
+{% block title %}CoHostr — Find Your Perfect Co-Host{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -209,7 +209,7 @@
   <div class="home-hero-inner">
     <div class="home-hero-badge">
       <span class="pulse"></span>
-      The #1 Host &amp; Co-Host Marketplace
+      The #1 Co-Host Platform
     </div>
 
     <h1>
@@ -232,16 +232,16 @@
 
     <div class="home-hero-stats ds-anim-stats">
       <div>
-        <span class="stat-val">{{ listings_count }}+</span>
+        <span class="stat-val">{{ listings_count }}</span>
         <span class="stat-lbl">Active Listings</span>
       </div>
       <div>
-        <span class="stat-val">{{ cohosts_count }}+</span>
-        <span class="stat-lbl">Verified Co-Hosts</span>
+        <span class="stat-val">{{ cohosts_count }}</span>
+        <span class="stat-lbl">Active Co-Hosts</span>
       </div>
       <div>
-        <span class="stat-val">15,000+</span>
-        <span class="stat-lbl">Properties Managed</span>
+        <span class="stat-val">{{ partnerships_count }}</span>
+        <span class="stat-lbl">Partnerships Formed</span>
       </div>
     </div>
   </div>
@@ -592,9 +592,9 @@
       <div class="footer-col">
         <h4>Legal</h4>
         <ul>
-          <li><a href="#">Privacy</a></li>
-          <li><a href="#">Terms</a></li>
-          <li><a href="#">Contact</a></li>
+          <li><a href="{% url 'privacy_policy' %}">Privacy</a></li>
+          <li><a href="{% url 'terms_of_service' %}">Terms</a></li>
+          <li><a href="{% url 'contact' %}">Contact</a></li>
         </ul>
       </div>
     </div>

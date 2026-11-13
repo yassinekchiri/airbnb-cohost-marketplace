@@ -1,0 +1,52 @@
+version: '3.9'
+
+services:
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: cohost_marketplace
+      POSTGRES_USER: ${POSTGRES_USER:-cohost}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cohost}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./media:/app/media
+      - ./logs:/app/logs
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cohost}:${POSTGRES_PASSWORD}@db:5432/cohost_marketplace
+      CACHE_URL: redis://redis:6379/1
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py createcachetable 2>/dev/null || true &&
+             gunicorn --config gunicorn.conf.py helloworld.wsgi:application"
+
+volumes:
+  pgdata:

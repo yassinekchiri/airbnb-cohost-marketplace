@@ -1,6 +1,6 @@
 {% extends 'hello/base.html' %}
 
-{% block title %}Login — Co-Host Marketplace{% endblock %}
+{% block title %}Login — CoHostr{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -19,7 +19,7 @@ body { background: var(--gradient-dark); }
     <div style="text-align:center;margin-bottom:0.5rem;">
       <div class="ds-logo-icon" style="margin:0 auto;width:48px;height:48px;border-radius:14px;font-size:1.25rem;">C</div>
     </div>
-    <div class="ds-auth-logo" style="margin-top:0.75rem;">Co-Host Marketplace</div>
+    <div class="ds-auth-logo" style="margin-top:0.75rem;">CoHostr</div>
     <div class="ds-auth-subtitle">Welcome back!</div>
 
     <form method="post">
@@ -48,7 +48,10 @@ body { background: var(--gradient-dark); }
       <button type="submit" class="ds-btn ds-btn-primary" style="width:100%;justify-content:center;border-radius:0.75rem;padding:0.875rem;">Login</button>
     </form>
 
-    <div style="text-align:center;margin-top:1.25rem;font-size:0.9rem;color:var(--clr-muted-fg);">
+    <div style="text-align:center;margin-top:1rem;font-size:0.9rem;">
+      <a href="{% url 'password_reset' %}" style="color:var(--clr-muted-fg);">Forgot your password?</a>
+    </div>
+    <div style="text-align:center;margin-top:0.75rem;font-size:0.9rem;color:var(--clr-muted-fg);">
       Don't have an account? <a href="{% url 'register' %}" style="color:var(--clr-primary);font-weight:600;">Register here</a>
     </div>
   </div>

@@ -1,6 +1,6 @@
 {% extends 'hello/base.html' %}
 
-{% block title %}Browse Listings — Co-Host Marketplace{% endblock %}
+{% block title %}Browse Listings — CoHostr{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -119,7 +119,9 @@
           <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:0.82rem;color:var(--clr-muted-fg);margin-bottom:0.75rem;">
             <span>📍 {{ listing.location|truncatechars:28 }}</span>
             {% if listing.property_type %}<span>🏡 {{ listing.property_type }}</span>{% endif %}
+            {% if listing.bedrooms %}<span>🛏 {{ listing.bedrooms }}</span>{% endif %}
             {% if listing.guests_capacity %}<span>👥 {{ listing.guests_capacity }}</span>{% endif %}
+            {% if listing.price %}<span>💲 {{ listing.price }}</span>{% endif %}
           </div>
 
           {% with needed=listing.tasks_needed.all %}

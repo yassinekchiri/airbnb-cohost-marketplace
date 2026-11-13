@@ -213,7 +213,7 @@
             <div class="stat-lbl">Years exp.</div>
           </div>
           <div class="stat-box">
-            <div class="stat-val">{{ managed_listings|length }}</div>
+            <div class="stat-val">{% if managed_listings %}{{ managed_listings|length }}{% else %}—{% endif %}</div>
             <div class="stat-lbl">Properties</div>
           </div>
           <div class="stat-box">
@@ -221,7 +221,7 @@
             <div class="stat-lbl">Avg. rating</div>
           </div>
           <div class="stat-box">
-            <div class="stat-val">{{ reviews|length }}</div>
+            <div class="stat-val">{% if reviews %}{{ reviews|length }}{% else %}—{% endif %}</div>
             <div class="stat-lbl">Reviews</div>
           </div>
         </div>

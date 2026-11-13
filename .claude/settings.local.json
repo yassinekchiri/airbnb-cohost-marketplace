@@ -17,7 +17,15 @@
       "Bash(git:*)",
       "Bash(gh repo:*)",
       "Bash(gh api:*)",
-      "Bash(do echo:*)"
+      "Bash(do echo:*)",
+      "Skill(run)",
+      "Bash(python manage.py runserver 8000)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(kill 2475)",
+      "Bash(python manage.py runserver 0.0.0.0:8000)",
+      "Bash(python -c ' *)",
+      "Bash(DJANGO_SETTINGS_MODULE=helloworld.settings python -c ' *)",
+      "Bash(python manage.py runserver 0.0.0.0:8000 > /tmp/django_server.log 2>&1 & *)"
     ],
     "deny": [],
     "ask": []

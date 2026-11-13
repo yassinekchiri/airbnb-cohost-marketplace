@@ -1,0 +1,61 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Page Not Found — CoHostr</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'hello/ds.css' %}">
+  <style>
+    .error-page {
+      min-height: 70vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 4rem 1.5rem;
+    }
+    .error-code {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(6rem, 20vw, 12rem);
+      font-weight: 800;
+      line-height: 1;
+      color: var(--color-primary, #FF5A5F);
+      opacity: 0.15;
+      margin: 0;
+    }
+    .error-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      font-weight: 700;
+      margin: -2rem 0 1rem;
+      color: var(--color-text, #222);
+    }
+    .error-message {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1.1rem;
+      color: var(--color-text-muted, #555);
+      max-width: 480px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+{% include 'hello/_nav.html' %}
+
+<div class="error-page">
+  <p class="error-code">404</p>
+  <h1 class="error-title">Page not found</h1>
+  <p class="error-message">
+    We couldn't find the page you were looking for. It may have been moved, deleted, or the URL might be wrong.
+  </p>
+  <a href="/" class="ds-btn ds-btn--primary">Back to marketplace</a>
+</div>
+
+</body>
+</html>
