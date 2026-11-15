@@ -1,0 +1,42 @@
+name: NUC lab
+
+# On-demand: build ANY branch on the home NUC and run the full stack + smoke test.
+# Actions > "NUC lab" > Run workflow. The stack is destroyed afterwards.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch, tag or SHA to test"
+        default: master
+        required: true
+      keep_running:
+        description: "Leave the stack up on the NUC for manual poking (port 8082, localhost only)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  lab:
+    runs-on: [self-hosted, nuc]
+    timeout-minutes: 30
+    concurrency: { group: nuc-lab, cancel-in-progress: true }
+    env:
+      COMPOSE_PROJECT_NAME: cohost-lab-${{ github.run_id }}
+      WEB_PORT: "8082"
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: "${{ inputs.ref }}" }
+      - name: Build from source on the NUC
+        run: docker build -t cohost-web:lab .
+      - name: Up
+        env: { WEB_IMAGE: cohost-web:lab }
+        run: docker compose -f docker-compose.ci.yml up -d --wait --wait-timeout 180
+      - run: python3 deploy/smoke.py http://127.0.0.1:8082
+      - name: Logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.ci.yml logs --no-color --tail=200
+      - name: Destroy
+        if: ${{ always() && !inputs.keep_running }}
+        run: docker compose -f docker-compose.ci.yml down -v

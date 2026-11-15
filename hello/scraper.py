@@ -5,7 +5,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from selenium.common.exceptions import TimeoutException
 from webdriver_manager.chrome import ChromeDriverManager
 from .models import AirbnbListing, DetailedAirbnbListing
 
@@ -190,7 +190,7 @@ class AirbnbScraper:
                         
                         listings_data.append(listing_data)
                         
-                except Exception as e:
+                except Exception:
                     continue
             
             return listings_data
@@ -335,7 +335,7 @@ class AirbnbScraper:
             
             return data
             
-        except Exception as e:
+        except Exception:
             return None
     
     def close(self):
@@ -612,7 +612,6 @@ class AirbnbScraper:
             # Continue with the rest of the host information extraction only if we have basic info
             if data['host_name'] or data['host_profile_url'] or data['host_id']:
                 # Look for host section context for additional info  
-                context_section = host_section if host_section else self.driver
                 
                 # Extract host stats (years hosting, reviews, response rate, etc.)
                 stats_elements = host_section.find_elements(By.XPATH, ".//div[contains(@class, 'review') or contains(@class, 'stat') or contains(text(), 'year') or contains(text(), 'review') or contains(text(), '%') or contains(text(), 'language') or contains(text(), 'joined')]")

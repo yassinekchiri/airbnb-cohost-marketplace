@@ -1,0 +1,53 @@
+# Throwaway full stack used by CI (GitHub runners) and by the NUC lab/staging.
+# Test-only credentials: nothing here may ever be reused in production.
+#
+#   WEB_IMAGE=ghcr.io/<owner>/<repo>@sha256:... docker compose -p cohost-ci -f docker-compose.ci.yml up -d --wait
+#   python deploy/smoke.py http://127.0.0.1:${WEB_PORT:-8000}
+name: cohost-ci
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: cohost
+      POSTGRES_USER: cohost
+      POSTGRES_PASSWORD: ci-only-password
+    tmpfs: [/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cohost -d cohost"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  web:
+    image: ${WEB_IMAGE:-cohost-web:ci}
+    build: .
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    environment:
+      SECRET_KEY: ci-only-secret-key-not-a-real-secret-0123456789abcdef0123456789abcdef
+      DEBUG: "False"
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      DATABASE_URL: postgresql://cohost:ci-only-password@db:5432/cohost
+      CACHE_URL: redis://redis:6379/1
+      LOG_TO_FILE: "False"
+      EMAIL_BACKEND: django.core.mail.backends.locmem.EmailBackend
+    command: sh -c "python manage.py migrate --noinput && exec gunicorn --config gunicorn.conf.py helloworld.wsgi:application"
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/healthz', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s

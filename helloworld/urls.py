@@ -19,8 +19,19 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth.views import LogoutView
+from django.db import connection
+from django.http import HttpResponse
+
+
+def healthz(request):
+    """Liveness + DB readiness probe for Docker/Caddy/uptime monitors."""
+    with connection.cursor() as cur:
+        cur.execute('SELECT 1')
+    return HttpResponse('ok', content_type='text/plain')
+
 
 urlpatterns = [
+    path('healthz', healthz),
     # Intercept admin logout so it goes to marketplace home, not the admin login page
     path('admin/logout/', LogoutView.as_view(next_page='marketplace_home')),
     path('admin/', admin.site.urls),

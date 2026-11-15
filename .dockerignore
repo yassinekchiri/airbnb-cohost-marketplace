@@ -8,3 +8,10 @@ logs/
 .git/
 .gitignore
 node_modules/
+
+secrets/
+.env.*
+.venv/
+.claude/
+cookies.txt
+docs/
