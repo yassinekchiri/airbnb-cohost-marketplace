@@ -20,7 +20,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(BASE_DIR / '.env')
 
-_sentry_dsn = os.getenv('SENTRY_DSN', '')
+
+def env(name, default=''):
+    """Read a setting from NAME, or from the file named by NAME_FILE.
+
+    The *_FILE form is the Docker/Kubernetes secrets convention: the secret is
+    mounted as a file (e.g. /run/secrets/secret_key) so it never appears in
+    `docker inspect`, /proc/<pid>/environ or crash reports.
+    """
+    path = os.environ.get(f'{name}_FILE')
+    if path:
+        with open(path, encoding='utf-8') as fh:
+            return fh.read().strip()
+    return os.environ.get(name, default)
+
+_sentry_dsn = env('SENTRY_DSN')
 if _sentry_dsn:
     sentry_sdk.init(
         dsn=_sentry_dsn,
@@ -31,7 +45,12 @@ if _sentry_dsn:
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-SECRET_KEY = os.environ['SECRET_KEY']
+SECRET_KEY = env('SECRET_KEY')
+if not SECRET_KEY:
+    raise RuntimeError('SECRET_KEY (or SECRET_KEY_FILE) must be set')
+# Old keys still accepted for signature verification, so rotating SECRET_KEY
+# does not log everyone out. Comma-separated.
+SECRET_KEY_FALLBACKS = [k for k in env('SECRET_KEY_FALLBACKS').split(',') if k]
 
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
@@ -88,7 +107,7 @@ WSGI_APPLICATION = 'helloworld.wsgi.application'
 
 import dj_database_url as _dj_db
 
-_database_url = os.getenv('DATABASE_URL', '').strip()
+_database_url = env('DATABASE_URL').strip()
 if _database_url:
     DATABASES = {'default': _dj_db.parse(_database_url, conn_max_age=600)}
 else:
@@ -155,7 +174,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # ── Cache ─────────────────────────────────────────────────────────────────────
 # File-based cache works on a single server; swap CACHE_URL for Redis in prod:
 #   CACHE_URL=redis://localhost:6379/1
-_cache_url = os.getenv('CACHE_URL', '').strip()
+_cache_url = env('CACHE_URL').strip()
 if _cache_url and _cache_url.startswith('redis://'):
     CACHES = {
         'default': {
@@ -196,12 +215,12 @@ SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_AGE = 86400  # 24 hours
 CSRF_COOKIE_HTTPONLY = False  # Must be False for JavaScript access
 CSRF_COOKIE_SAMESITE = 'Lax'
+# Dev origins are always allowed; add production origins via the env var,
+# e.g. CSRF_TRUSTED_ORIGINS=https://cohost.example.com
 CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:8000', 
+    'http://localhost:8000',
     'http://127.0.0.1:8000',
-    'http://0.0.0.0:8000',
-    'http://192.168.1.102:8000'  # Your actual access URL
-]
+] + [o for o in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if o]
 CSRF_USE_SESSIONS = False
 CSRF_COOKIE_DOMAIN = None
 
@@ -212,6 +231,11 @@ X_FRAME_OPTIONS = 'DENY'
 
 # The settings below are safe to define now; they only enforce when True.
 # Set them to True in production .env once HTTPS is in place.
+# Behind Caddy/nginx the app only sees plain HTTP; trust the proxy's header so
+# request.is_secure() works and SECURE_SSL_REDIRECT does not loop.
+if os.getenv('BEHIND_PROXY', 'False') == 'True':
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_REDIRECT_EXEMPT = [r'^healthz$']  # plain-HTTP probes from inside the network
 SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False') == 'True'
 SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '0'))
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
@@ -234,12 +258,15 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
         },
+        # LOG_TO_FILE=False in containers: log to stdout only.
         'file': {
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': BASE_DIR / 'logs' / 'django.log',
             'maxBytes': 1024 * 1024 * 10,  # 10 MB
             'backupCount': 5,
             'formatter': 'verbose',
+        } if os.getenv('LOG_TO_FILE', 'True') == 'True' else {
+            'class': 'logging.NullHandler',
         },
     },
     'root': {
@@ -268,6 +295,6 @@ EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@example.com')
 SERVER_EMAIL = DEFAULT_FROM_EMAIL

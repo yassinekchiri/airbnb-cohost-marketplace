@@ -1,0 +1,41 @@
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+
+	request_body {
+		max_size 10MB
+	}
+
+	# User uploads are served straight from the shared volume (read-only mount)
+	handle_path /media/* {
+		root * /srv/media
+		header Cache-Control "public, max-age=604800"
+		header Content-Security-Policy "default-src 'none'; img-src 'self'"
+		file_server
+	}
+
+	# Health probe is for Docker/Caddy only, not the public internet
+	handle /healthz {
+		respond 404
+	}
+
+	# Everything else -> gunicorn. Caddy sets X-Forwarded-Proto/For itself.
+	handle {
+		reverse_proxy web:8000 {
+			health_uri /healthz
+			health_interval 15s
+		}
+	}
+}

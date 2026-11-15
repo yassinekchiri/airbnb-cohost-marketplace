@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -6,26 +7,28 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Chromium for the Airbnb scraper
+# Chromium for the Airbnb scraper (moves to its own worker image in Phase 6)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    chromium \
-    chromium-driver \
+    chromium chromium-driver \
     && rm -rf /var/lib/apt/lists/*
 
-# Python deps
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# App source
-COPY . .
+# Run as an unprivileged user
+RUN useradd --system --uid 10001 --create-home app \
+    && mkdir -p /app/logs /app/media /app/staticfiles \
+    && chown -R app:app /app
 
-# Collect static files (needs SECRET_KEY at build time — use a placeholder)
-RUN SECRET_KEY=build-placeholder DEBUG=False ALLOWED_HOSTS=localhost \
+COPY --chown=app:app . .
+USER app
+
+# Placeholder secrets exist only for this build step and are not kept in the image.
+RUN SECRET_KEY=build-placeholder DEBUG=False ALLOWED_HOSTS=localhost LOG_TO_FILE=False \
     python manage.py collectstatic --noinput
 
-# Runtime directories
-RUN mkdir -p logs media
-
 EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD python -c "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/healthz', timeout=3)" || exit 1
 
 CMD ["gunicorn", "--config", "gunicorn.conf.py", "helloworld.wsgi:application"]

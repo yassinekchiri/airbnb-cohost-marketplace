@@ -1,64 +1,18 @@
-asgiref==3.9.1
-attrs==23.2.0
-beautifulsoup4==4.13.5
-certifi==2025.8.3
-charset-normalizer==3.4.2
-cockpit @ file:///builddir/build/BUILD/cockpit-344/tmp/wheel/cockpit-344-py3-none-any.whl#sha256=6c0da7c2cbfb1207f38f238b3011ff193c786540a0404088b52184bb35356ba0
-dasbus==1.7
-dbus-python==1.3.2
-distro==1.9.0
-dj-database-url==3.1.2
+# Runtime dependencies for CoHost (Python 3.12).
+# Only direct dependencies are pinned; pip resolves the rest.
+# Regenerate a fully locked file with:  pip-compile requirements.txt -o requirements.lock
 Django==5.2.6
+dj-database-url==3.1.2
 django-ratelimit==4.1.0
-dnf==4.20.0
-file-magic==0.4.0
 gunicorn==26.0.0
-h11==0.16.0
-idna==3.7
-jsonschema==4.19.1
-jsonschema-specifications==2023.11.2
-libcomps==0.1.21
-libdnf==0.73.1
-nftables==0.1
-outcome==1.3.0.post0
-packaging==24.2
-perf==0.1
-pexpect==4.9.0
 pillow==12.1.1
 psycopg2-binary==2.9.12
-ptyprocess==0.7.0
-PyGObject==3.46.0
-pyinotify==0.9.6
-PySocks==1.7.1
-python-dateutil==2.9.0.post0
 python-dotenv==1.1.1
-python-linux-procfs==0.7.3
-pyudev==0.24.1
-PyYAML==6.0.1
-pyynl @ file:///builddir/build/BUILD/kernel-6.12.0-122.el10/linux-6.12.0-122.el10.x86_64/tools/net/ynl
-referencing==0.31.1
+redis==5.2.1            # required by django.core.cache.backends.redis
 requests==2.32.4
-rpds-py==0.17.1
-rpm==4.19.1.1
 selenium==4.35.0
-selinux @ file:///builddir/build/BUILD/libselinux-3.9/src
 sentry-sdk==2.62.0
-sepolicy @ file:///builddir/build/BUILD/selinux-3.9/python/sepolicy
-setools==4.5.1
-setroubleshoot @ file:///builddir/build/BUILD/setroubleshoot-3.3.35/src
-setuptools==69.0.3
-six==1.16.0
-sniffio==1.3.1
-sortedcontainers==2.4.0
-sos==4.9.2
-soupsieve==2.8
-sqlparse==0.5.3
-systemd-python==235
-trio==0.30.0
-trio-websocket==0.12.2
-typing_extensions==4.14.1
-urllib3==2.5.0
 webdriver-manager==4.0.2
-websocket-client==1.8.0
 whitenoise==6.12.0
-wsproto==1.2.0
+# Phase 6 (async scraping) — uncomment when the Celery task lands:
+# celery[redis]==5.4.0
