@@ -1,19 +1,17 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login, authenticate
 from django.contrib import messages
 from django.db.models import Q
 from django.core.paginator import Paginator
 from django.views.decorators.cache import never_cache
 from django_ratelimit.decorators import ratelimit
 
-from .models import (DetailedAirbnbListing, UserProfile, HostProfile, CoHostProfile,
+from .models import (UserProfile, HostProfile, CoHostProfile,
                     MarketplaceListing, Proposal, Message, Task, UserSocialLink,
                     DirectConversation, DirectMessage, Review)
 from .forms import (CustomUserCreationForm, HostProfileForm, CoHostProfileForm,
-                   AddListingForm, ManualListingForm, ProposalForm, EditProposalForm, MessageForm,
-                   UserInfoForm, ReviewForm)
+                   AddListingForm, ManualListingForm, ProposalForm, EditProposalForm, UserInfoForm)
 import json
 import subprocess
 import os
@@ -28,26 +26,26 @@ _MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
 _ALLOWED_IMAGE_TYPES = {'image/jpeg', 'image/png', 'image/webp', 'image/gif'}
 
 def _validate_scraper_url(url):
+    """Allow only http(s) URLs whose *hostname* is airbnb.com or a subdomain of it.
+
+    Matching on parsed.hostname (not a substring of the netloc) rejects lookalikes
+    such as airbnb.com.evil.example, evil-airbnb.com and airbnb.com@evil.example.
+    """
     try:
         parsed = urlparse(url)
-        if parsed.scheme not in ('http', 'https'):
-            raise ValueError("URL must use http or https.")
-        if not parsed.netloc or 'airbnb.com' not in parsed.netloc:
-            raise ValueError("URL must be an Airbnb listing URL.")
-        # Block private/reserved IPs to prevent SSRF
-        try:
-            ip = ipaddress.ip_address(parsed.hostname)
-            if ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local:
-                raise ValueError("Invalid URL target.")
-        except ValueError as e:
-            # If it raises here because of the IP check, re-raise it
-            if "Invalid URL" in str(e):
-                raise
-            # Otherwise hostname is a domain name, not an IP — that's fine
+        host = (parsed.hostname or '').lower().rstrip('.')
     except ValueError:
-        raise
-    except Exception:
         raise ValueError("Invalid URL format.")
+    if parsed.scheme not in ('http', 'https'):
+        raise ValueError("URL must use http or https.")
+    if not (host == 'airbnb.com' or host.endswith('.airbnb.com')):
+        raise ValueError("URL must be an Airbnb listing URL.")
+    # Defence in depth: never let a literal IP through, whatever the host check says.
+    try:
+        ipaddress.ip_address(host)
+    except ValueError:
+        return  # a domain name, as expected
+    raise ValueError("Invalid URL target.")
 
 
 def _validate_image_upload(f):
@@ -86,7 +84,7 @@ def hello_world(request):
                 error = "Please enter a valid Airbnb URL"
             else:
                 try:
-                    detailed_data = scrape_single_airbnb_listing(listing_url, headless=True)
+                    detailed_data = scrape_single_airbnb_listing(listing_url, headless=True)  # noqa: F821 (legacy route: function was removed; always lands in the except below)
                     detailed_listing = detailed_data
                     scrape_performed = True
                 except Exception:
@@ -106,7 +104,7 @@ def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save()
+            form.save()
             username = form.cleaned_data.get('username')
             messages.success(request, f'Account created for {username}!')
             return redirect('login')

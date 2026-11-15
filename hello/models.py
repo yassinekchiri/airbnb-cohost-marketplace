@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 import os
-from django.utils import timezone
 
 class AirbnbListing(models.Model):
     title = models.CharField(max_length=500)

@@ -1,15 +1,15 @@
 # Runtime dependencies for CoHost (Python 3.12).
 # Only direct dependencies are pinned; pip resolves the rest.
 # Regenerate a fully locked file with:  pip-compile requirements.txt -o requirements.lock
-Django==5.2.6
+Django==5.2.19
 dj-database-url==3.1.2
 django-ratelimit==4.1.0
 gunicorn==26.0.0
-pillow==12.1.1
+pillow==13.0.0
 psycopg2-binary==2.9.12
-python-dotenv==1.1.1
+python-dotenv==1.2.2
 redis==5.2.1            # required by django.core.cache.backends.redis
-requests==2.32.4
+requests==2.33.0
 selenium==4.35.0
 sentry-sdk==2.62.0
 webdriver-manager==4.0.2

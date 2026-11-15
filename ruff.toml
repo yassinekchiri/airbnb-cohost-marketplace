@@ -1,0 +1,9 @@
+target-version = "py312"
+line-length = 120
+extend-exclude = ["hello/migrations", "staticfiles", "node_modules", ".venv"]
+
+[lint]
+# Start with correctness rules only (syntax errors, undefined names, unused imports/vars,
+# bugbear). Style rules can be added once the existing code is clean.
+select = ["E9", "F", "B"]
+ignore = ["B008", "B904", "B007"]
