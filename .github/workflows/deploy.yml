@@ -52,7 +52,7 @@ jobs:
             --certificate-identity "https://github.com/${REPO}/.github/workflows/ci.yml@refs/heads/master" \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com >/dev/null
           echo "ref=$ref" >> "$GITHUB_OUTPUT"; echo "sha=$sha" >> "$GITHUB_OUTPUT"
-          echo "### Image\n\`$ref\`" | sed 's/\\n/\n/' >> "$GITHUB_STEP_SUMMARY"
+          printf '### Image\n`%s`\n' "$ref" >> "$GITHUB_STEP_SUMMARY"
 
   staging:
     name: staging (NUC)
@@ -114,7 +114,9 @@ jobs:
         run: tar czf - docker-compose.prod.yml Caddyfile setup.sh | ssh prod 'mkdir -p /opt/cohost/incoming && tar xzf - -C /opt/cohost/incoming'
       - name: Registry login on the server (job-scoped token, removed afterwards)
         env: { GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}", ACTOR: "${{ github.actor }}" }
-        run: printf '%s' "$GH_TOKEN" | ssh prod "docker login ghcr.io -u '$ACTOR' --password-stdin"
+        run: |
+          # shellcheck disable=SC2029  # ACTOR is meant to expand locally
+          printf '%s' "$GH_TOKEN" | ssh prod "docker login ghcr.io -u '$ACTOR' --password-stdin"
       - name: Deploy
         env:
           DOMAIN: ${{ vars.SITE_DOMAIN }}
@@ -122,6 +124,7 @@ jobs:
           EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
         run: |
+          # shellcheck disable=SC2029  # IMAGE_REF is meant to expand locally
           # Secrets travel on stdin, never on a command line.
           {
             printf 'export DOMAIN=%q ACME_EMAIL=%q EMAIL_HOST_PASSWORD=%q SENTRY_DSN=%q\n' \
