@@ -1,0 +1,28 @@
+# GitHub Actions self-hosted runner for the Intel NUC lab (runs inside ONE dedicated Ubuntu VM on ESXi).
+#
+# - EPHEMERAL: each container takes exactly one job, then exits; `restart: always` brings up a
+#   fresh, re-registered one. No state leaks between runs.
+# - OUTBOUND ONLY: it long-polls GitHub over 443. Open no inbound ports.
+# - The Docker socket is mounted so jobs can run `docker compose`. That makes any job root-equivalent
+#   ON THIS VM, which is why the VM holds nothing but throwaway test secrets and sits on an isolated VLAN.
+#   Only same-repo PRs and master may reach it (the workflows never use pull_request_target).
+name: nuc-runner
+
+services:
+  runner:
+    image: myoung34/github-runner:latest   # pin to a digest once it works
+    restart: always
+    environment:
+      REPO_URL: "https://github.com/${GITHUB_REPO:?set GITHUB_REPO=owner/repo}"
+      ACCESS_TOKEN: "${RUNNER_PAT:?set RUNNER_PAT - fine-grained PAT with Administration read-write on this one repo}"
+      RUNNER_SCOPE: repo
+      RUNNER_NAME_PREFIX: nuc
+      LABELS: nuc
+      EPHEMERAL: "1"
+      DISABLE_AUTO_UPDATE: "1"
+      RUNNER_WORKDIR: /tmp/runner-work
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/runner-work:/tmp/runner-work
+    deploy:
+      replicas: 1

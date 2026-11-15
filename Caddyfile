@@ -36,6 +36,10 @@
 		reverse_proxy web:8000 {
 			health_uri /healthz
 			health_interval 15s
+			# Hide the few seconds while a new web container replaces the old one:
+			# Caddy retries the upstream instead of returning 502.
+			lb_try_duration 20s
+			lb_try_interval 250ms
 		}
 	}
 }

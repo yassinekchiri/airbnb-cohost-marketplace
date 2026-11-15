@@ -55,7 +55,7 @@ services:
   web:
     <<: *hardening
     build: .
-    image: cohost-web:latest
+    image: ${WEB_IMAGE:-cohost-web:latest}
     environment:
       <<: *django-env
       # Scraping still runs inside the request until Celery (Phase 6) lands.
@@ -76,7 +76,7 @@ services:
 
   migrate:
     build: .
-    image: cohost-web:latest
+    image: ${WEB_IMAGE:-cohost-web:latest}
     restart: "no"
     command: python manage.py migrate --noinput
     environment: *django-env
