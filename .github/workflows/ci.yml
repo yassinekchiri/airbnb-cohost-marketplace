@@ -80,7 +80,7 @@ jobs:
       - name: Known-vulnerable dependencies
         run: pip install pip-audit==2.7.3 && pip-audit -r requirements.txt --strict
       - name: Leaked secrets in history
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
 
   image:
