@@ -134,3 +134,29 @@ Commit `.env`/`secrets/`; paste secrets in issues/CI logs; reuse the dev `SECRET
 6. Encrypt `secrets/` with SOPS (Layer 3A) and store the age key offline.
 
 > `nginx.conf` is superseded by `Caddyfile` and can be deleted. `docker-compose.yml` remains the dev/Postgres-local stack.
+
+
+## 7. Production bill of materials (Morocco first, global later)
+
+| Layer | Choice | Why / notes |
+|---|---|---|
+| DNS, CDN, WAF, DDoS | **Cloudflare** (Free, then Pro) | Has a point of presence in Casablanca (verify on their network map); caches `/static` and `/media`; origin locked to Cloudflare IPs |
+| Compute | **One VM, 4 vCPU / 8 GB, Ubuntu 24.04 LTS**, Paris region (Scaleway `fr-par`, or OVH Paris) | Lowest latency to Morocco from a major EU region (roughly 40-60 ms); managed Postgres and S3 storage available later in the same region. Hetzner is cheaper but farther |
+| Edge proxy | **Caddy 2** | Automatic TLS, HTTP/3, retries upstream during deploys |
+| App | **Python 3.12, Django 5.2 LTS, gunicorn** | Non-root container, read-only filesystem, stdout logs |
+| Database | **PostgreSQL 16** (container, volume) with nightly dump now, WAL archiving (pgBackRest) next | Move to managed Postgres by changing `DATABASE_URL` only |
+| Cache / broker | **Redis 7**, password, no persistence | Rate limits, Celery broker |
+| Async jobs | **Celery 5** (default queue) + isolated **scraper worker** (Chromium, own image, no DB/secrets) | Phase 6 |
+| Media + backups | **S3-compatible object storage** (Scaleway Object Storage) via `django-storages` | Two buckets: public media behind the CDN; private age-encrypted backups |
+| Secrets | Files on tmpfs (`/run/secrets`); generated on the server; SOPS + age for any copy in git | Section 5 |
+| Registry / supply chain | **GHCR**, cosign keyless signatures, SBOM, Trivy, Dependabot, gitleaks | Production only runs images signed by this repo's CI |
+| Access | **Tailscale** (SSH only over the tailnet); UFW allows 80/443 only | No public port 22 |
+| IaC | **Terraform** (Scaleway + Cloudflare providers), state in an encrypted bucket | Next step |
+| Observability | **Sentry**, uptime monitor (Better Stack or UptimeRobot), Grafana Cloud free tier for logs/metrics | |
+| Transactional email | **EU provider with SMTP/API** (Brevo, Postmark or SES), SPF/DKIM/DMARC on the domain | Gmail SMTP is not for production |
+
+### Morocco-specific and "global later"
+- **Data protection**: Morocco's Law 09-08 (CNDP) requires declaring personal-data processing and has rules for transfers abroad; hosting in the EU is generally workable but confirm with a local lawyer. If EU residents sign up, GDPR also applies.
+- **Languages**: Arabic (RTL) and French first. Django i18n is enabled; add `LocaleMiddleware`, translation files and RTL CSS. Use `Africa/Casablanca` for display; keep storage in UTC.
+- **Currency/payments**: store amounts with an explicit currency (MAD first). Stripe does not onboard Moroccan merchants directly; plan on CMI/Payzone or a licensed payment partner when payments are added.
+- **Going global**: the CDN already serves media worldwide. Add a read replica in a second region only when latency data justifies it; the app stays one monolith.
