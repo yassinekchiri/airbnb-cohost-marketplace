@@ -16,7 +16,7 @@ jobs:
     timeout-minutes: 15
     permissions: { contents: read, packages: read, issues: write }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: pip install pip-audit==2.7.3 && pip-audit -r requirements.txt --strict
