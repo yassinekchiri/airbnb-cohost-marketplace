@@ -1679,7 +1679,7 @@ def contact(request):
             from django.conf import settings as django_settings
             try:
                 send_mail(
-                    subject=f'[CoHostr Contact] {subject or "New message"}',
+                    subject=f'[CoHost Contact] {subject or "New message"}',
                     message=f'From: {name} <{email}>\n\n{message_body}',
                     from_email=django_settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[django_settings.DEFAULT_FROM_EMAIL],
