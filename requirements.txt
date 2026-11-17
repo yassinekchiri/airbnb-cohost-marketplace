@@ -8,7 +8,7 @@ gunicorn==26.0.0
 pillow==13.0.0
 psycopg2-binary==2.9.13
 python-dotenv==1.2.4
-redis==5.2.1            # required by django.core.cache.backends.redis
+redis==8.1.0            # required by django.core.cache.backends.redis
 requests==2.34.2
 selenium==4.52.0
 sentry-sdk==2.75.0
