@@ -29,4 +29,5 @@ jobs:
           IMAGE: ghcr.io/${{ github.repository }}:master
         run: |
           docker run --rm -e TRIVY_USERNAME -e TRIVY_PASSWORD aquasec/trivy:0.76.2 image \
-            --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 --scanners vuln "${IMAGE,,}"
+            --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 --scanners vuln \
+            --skip-files /usr/local/lib/python3.12/site-packages/pip/_vendor/bom.cdx.json "${IMAGE,,}"

@@ -98,14 +98,14 @@ jobs:
           tags: cohost-web:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      - name: DEBUG where does the 70.3.0 finding come from (temporary)
-        run: |
-          docker run --rm --entrypoint sh cohost-web:ci -c 'find / \( -iname "*.cdx.json" -o -iname "*.spdx*" -o -iname "*sbom*" -o -iname "*bom.json" \) -not -path "/proc/*" -not -path "/sys/*" 2>/dev/null | head -20; grep -rl "70\\.3\\.0" /usr/local /opt /root /home /var/lib/dpkg 2>/dev/null | head -20'
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.76.2 image --severity HIGH,CRITICAL --ignore-unfixed --scanners vuln --format json cohost-web:ci 2>/dev/null | grep -E '"(Target|PkgPath|PkgName|InstalledVersion|VulnerabilityID|FilePath|Type|Class)"' | grep -B4 -A4 -E 'setuptools|CVE-2025-47273' | head -40 || true
       - name: Scan image (HIGH/CRITICAL with a fix available)
+        # pip ships a bom.cdx.json that lists its vendored pkg_resources as setuptools 70.3.0, which
+        # Trivy reports as CVE-2025-47273 although that version is not installed (the real setuptools
+        # is >= 78.1.1). Skip only that file; every installed package is still scanned.
         run: |
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
             aquasec/trivy:0.76.2 image --severity HIGH,CRITICAL --ignore-unfixed \
+            --skip-files /usr/local/lib/python3.12/site-packages/pip/_vendor/bom.cdx.json \
             --exit-code 1 --scanners vuln cohost-web:ci
       - name: Start the stack (Postgres + Redis + gunicorn)
         run: docker compose -f docker-compose.ci.yml up -d --wait --wait-timeout 120
