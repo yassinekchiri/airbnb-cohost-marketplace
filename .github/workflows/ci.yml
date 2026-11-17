@@ -98,6 +98,9 @@ jobs:
           tags: cohost-web:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: DEBUG where is setuptools (temporary)
+        run: |
+          docker run --rm --entrypoint sh cohost-web:ci -c 'pip list 2>/dev/null | grep -i -E "setuptools|wheel"; find / \( -iname "setuptools*" -o -iname "pkg_resources*" \) -not -path "/proc/*" -maxdepth 7 2>/dev/null | head -30'
       - name: Scan image (HIGH/CRITICAL with a fix available)
         run: |
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
