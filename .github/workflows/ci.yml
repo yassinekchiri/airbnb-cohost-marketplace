@@ -99,13 +99,10 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Scan image (HIGH/CRITICAL with a fix available)
-        uses: aquasecurity/trivy-action@v0.28.0
-        with:
-          image-ref: cohost-web:ci
-          severity: HIGH,CRITICAL
-          ignore-unfixed: true
-          exit-code: "1"
-          vuln-type: os,library
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.76.2 image --severity HIGH,CRITICAL --ignore-unfixed \
+            --exit-code 1 --scanners vuln cohost-web:ci
       - name: Start the stack (Postgres + Redis + gunicorn)
         run: docker compose -f docker-compose.ci.yml up -d --wait --wait-timeout 120
       - name: Smoke test
