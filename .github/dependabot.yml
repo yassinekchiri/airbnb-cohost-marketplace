@@ -4,12 +4,23 @@ updates:
     directory: /
     schedule: { interval: weekly, day: monday, time: "06:00", timezone: Africa/Casablanca }
     open-pull-requests-limit: 5
+    ignore:
+      # Stay on the Django 5.2 LTS line; a major upgrade is a deliberate project.
+      - dependency-name: django
+        update-types: ["version-update:semver-major"]
     groups:
       python-minor-and-patch:
         update-types: [minor, patch]
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly, day: monday, time: "06:00", timezone: Africa/Casablanca }
+    groups:
+      actions:
+        patterns: ["*"]
   - package-ecosystem: docker
     directory: /
     schedule: { interval: weekly, day: monday, time: "06:00", timezone: Africa/Casablanca }
+    ignore:
+      # Base image stays on the Python version our dependencies are validated against (3.12).
+      - dependency-name: python
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]

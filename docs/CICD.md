@@ -26,12 +26,10 @@ The NUC only gates *staging*, and that gate has a manual bypass (below).
 
 ## One-time setup (about 30 minutes, all doable in a browser)
 
-### 0. Install the workflows (GitHub blocks the Claude token from writing `.github/workflows/`)
-The four workflow files are committed in **`github-workflows/`**. Move them into place with your own permissions,
-either way works from a phone:
-- **Web UI**: open each file in `github-workflows/`, press *Edit*, change the path to `.github/workflows/<name>.yml`, commit to a branch, open a PR.
-- **Or** grant the Claude GitHub App the *Workflows: read and write* permission (https://github.com/apps/claude/installations/select_target), then ask Claude to `git mv github-workflows .github/workflows`.
-Until this is done, **no CI runs**. Do it before relying on anything below.
+### 0. Workflows (done)
+The four workflow files live in **`.github/workflows/`**. The Claude GitHub App has the *Workflows: read and write*
+permission, so Claude can change them through a normal PR. Trivy runs from its official image (`aquasec/trivy`)
+instead of `trivy-action`, whose internal `setup-trivy` dependency could not be resolved.
 
 ### 1. GitHub repo settings
 - **Branches**: protect `master`: require a PR, require status check `CI / ci-ok`, block force pushes.

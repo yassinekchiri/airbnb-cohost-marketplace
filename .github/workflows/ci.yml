@@ -99,13 +99,14 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Scan image (HIGH/CRITICAL with a fix available)
-        uses: aquasecurity/trivy-action@v0.28.0
-        with:
-          image-ref: cohost-web:ci
-          severity: HIGH,CRITICAL
-          ignore-unfixed: true
-          exit-code: "1"
-          vuln-type: os,library
+        # pip ships a bom.cdx.json that lists its vendored pkg_resources as setuptools 70.3.0, which
+        # Trivy reports as CVE-2025-47273 although that version is not installed (the real setuptools
+        # is >= 78.1.1). Skip only that file; every installed package is still scanned.
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.76.2 image --severity HIGH,CRITICAL --ignore-unfixed \
+            --skip-files /usr/local/lib/python3.12/site-packages/pip/_vendor/bom.cdx.json \
+            --exit-code 1 --scanners vuln cohost-web:ci
       - name: Start the stack (Postgres + Redis + gunicorn)
         run: docker compose -f docker-compose.ci.yml up -d --wait --wait-timeout 120
       - name: Smoke test

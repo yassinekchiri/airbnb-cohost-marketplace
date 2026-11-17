@@ -18,7 +18,7 @@ Users: Morocco first, global later. Repo is private; development happens in Clau
 
 ## Map
 - `docs/ARCHITECTURE.md` stack and secrets; `docs/CICD.md` pipeline runbook.
-- `github-workflows/` ci, deploy, nightly, lab (must be installed to `.github/workflows/`; the Claude token cannot push there, see docs/CICD.md section 0). `deploy/` smoke test and server scripts. `infra/nuc/` home test lab.
+- `.github/workflows/` ci, deploy, nightly, lab (the Claude GitHub App has the Workflows permission, so Claude can edit them). `deploy/` smoke test and server scripts. `infra/nuc/` home test lab.
 - `docker-compose.prod.yml` + `Caddyfile` production; `docker-compose.ci.yml` throwaway test stack.
 
 ## Open work
