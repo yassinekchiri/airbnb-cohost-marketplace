@@ -13,7 +13,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+# The base image ships an old setuptools (CVE-2025-47273, fixed in 78.1.1); upgrade it with pip.
+RUN pip install --upgrade pip "setuptools>=78.1.1" && pip install -r requirements.txt
 
 # Run as an unprivileged user
 RUN useradd --system --uid 10001 --create-home app \
