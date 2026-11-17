@@ -6,13 +6,13 @@ dj-database-url==3.1.2
 django-ratelimit==4.1.0
 gunicorn==26.0.0
 pillow==13.0.0
-psycopg2-binary==2.9.12
-python-dotenv==1.2.2
+psycopg2-binary==2.9.13
+python-dotenv==1.2.4
 redis==5.2.1            # required by django.core.cache.backends.redis
-requests==2.33.0
-selenium==4.35.0
-sentry-sdk==2.62.0
-webdriver-manager==4.0.2
+requests==2.34.2
+selenium==4.52.0
+sentry-sdk==2.75.0
+webdriver-manager==4.1.2
 whitenoise==6.12.0
 # Phase 6 (async scraping) — uncomment when the Celery task lands:
 # celery[redis]==5.4.0
