@@ -29,7 +29,7 @@ jobs:
       - name: Lint workflows
         run: actionlint
       - name: Lint shell scripts
-        run: bash -n setup.sh && bash -n deploy/remote-deploy.sh && bash -n deploy/server-bootstrap.sh
+        run: bash -n setup.sh && bash -n deploy/remote-deploy.sh && bash -n deploy/server-bootstrap.sh && bash -n infra/proxmox/host-setup.sh
 
   test:
     name: test (${{ matrix.db }})
