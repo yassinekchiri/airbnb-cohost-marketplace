@@ -63,7 +63,7 @@ It installs Docker + Tailscale, creates the `deploy` user, locks SSH to the tail
 Point DNS (Cloudflare) at the VM, then run **Deploy** once. The first run generates secrets and starts everything.
 
 ### 5. NUC (optional, test only)
-In an Ubuntu VM on ESXi: `GITHUB_REPO=owner/repo RUNNER_PAT=github_pat_... bash infra/nuc/bootstrap-runner-vm.sh`.
+Install Proxmox first (`docs/PROXMOX.md`), then in an Ubuntu VM on it: `GITHUB_REPO=owner/repo RUNNER_PAT=github_pat_... bash infra/nuc/bootstrap-runner-vm.sh`.
 The PAT is a fine-grained token with *Administration: read/write* on this one repository. Put the VM on an isolated VLAN.
 
 ## Day-to-day
