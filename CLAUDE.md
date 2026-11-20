@@ -3,6 +3,11 @@
 Django 5.2 marketplace where Airbnb hosts find co-hosts. App `hello`, project `helloworld`.
 Users: Morocco first, global later. Repo is private; development happens in Claude Code on the web (no laptop).
 
+## Start here
+1. Read `docs/STATUS.md` (what is done, blocked, next) and `docs/DECISIONS.md` (settled choices: do not re-open without a new reason).
+2. At the end of every session update `docs/STATUS.md`; record any new architecture choice in `docs/DECISIONS.md`.
+3. Never ask the owner for secrets in chat. Owner-only GitHub settings (environments, code security, secrets) are listed in STATUS.md.
+
 ## Run / test
 - `./setup.sh dev` then `source .venv/bin/activate` (SQLite, console email).
 - `pytest` (tests/ is hermetic: locmem cache, in-memory storage). `ruff check .`
@@ -17,7 +22,7 @@ Users: Morocco first, global later. Repo is private; development happens in Clau
 - User-facing name is "CoHost" (no trailing "r").
 
 ## Map
-- `docs/ARCHITECTURE.md` stack and secrets; `docs/CICD.md` pipeline runbook.
+- `docs/STATUS.md` current state; `docs/DECISIONS.md` decision log; `docs/ARCHITECTURE.md` stack and secrets; `docs/CICD.md` pipeline runbook; `docs/PROXMOX.md` NUC hypervisor.
 - `.github/workflows/` ci, deploy, nightly, lab (the Claude GitHub App has the Workflows permission, so Claude can edit them). `deploy/` smoke test and server scripts. `infra/nuc/` home test lab, `infra/proxmox/` Proxmox host setup (see docs/PROXMOX.md; replaces ESXi on the NUC).
 - `docker-compose.prod.yml` + `Caddyfile` production; `docker-compose.ci.yml` throwaway test stack.
 
