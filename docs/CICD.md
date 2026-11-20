@@ -31,6 +31,11 @@ The four workflow files live in **`.github/workflows/`**. The Claude GitHub App 
 permission, so Claude can change them through a normal PR. Trivy runs from its official image (`aquasec/trivy`)
 instead of `trivy-action`, whose internal `setup-trivy` dependency could not be resolved.
 
+### 0b. Deploy switch
+`deploy.yml` does nothing until the repository variable **`DEPLOY_ENABLED`** is `true` (Settings > Secrets and variables > Actions > Variables).
+Set it only when the NUC runner, the production VM and the production secrets exist; otherwise every merge would queue a deploy
+that waits for a runner that is not there.
+
 ### 1. GitHub repo settings
 - **Branches**: protect `master`: require a PR, require status check `CI / ci-ok`, block force pushes.
 - **Actions > General**: default workflow permissions = *Read*; require approval for outside collaborators.

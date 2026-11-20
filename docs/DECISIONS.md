@@ -16,6 +16,7 @@ Status: **settled**, **open** (needs the owner) or **superseded**.
 | 2026-11 | Stay on **Django 5.2 LTS** and **Python 3.12** base image; Dependabot ignores the bumps | A major upgrade is a deliberate project, not a bot PR | settled |
 | 2026-11 | Production = one EU VM behind Cloudflare, Caddy for TLS, Docker Compose, Tailscale for SSH | Cheapest option that fits; managed services can come later (change `DATABASE_URL`) | settled |
 | 2026-11 | Moroccan hosting only if the CNDP, a customer contract or latency data requires it | Higher price, no API/Terraform, no S3-compatible storage | settled |
+| 2026-11 | Deploys are off until the repository variable `DEPLOY_ENABLED` is `true` | Without a runner and VM every merge queued a deploy that waited for a runner that does not exist; a stale deploy could also start when a runner is registered later | settled |
 | 2026-11 | Secrets are files (`NAME_FILE`), never env vars or Git; SOPS + age for any copy in Git | See `docs/ARCHITECTURE.md` section 5 | settled |
 | - | **Cloud provider**: Hetzner Cloud (cheaper, about 60-80 ms to Morocco) vs Scaleway Paris (about 40-60 ms, managed Postgres, higher price) | Leaning Hetzner on cost | **open** |
 | - | **Domain name** | Not chosen yet | **open** |
