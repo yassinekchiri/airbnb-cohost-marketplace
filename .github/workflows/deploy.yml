@@ -24,7 +24,8 @@ permissions:
 jobs:
   resolve:
     name: resolve + verify image
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    # Off until the owner sets the repository variable DEPLOY_ENABLED=true (NUC runner + production VM + secrets ready).
+    if: vars.DEPLOY_ENABLED == 'true' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions: { contents: read, packages: read }
