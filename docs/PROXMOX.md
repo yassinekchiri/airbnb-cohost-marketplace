@@ -69,6 +69,18 @@ pvesm status          # local, local-lvm (or local-zfs), nas  -> all "active"
 qm list               # shows template 9000
 ```
 
+## Lessons from the first real install (Proxmox VE 9.2, Debian trixie)
+- **Enterprise repos return 401.** A fresh Proxmox 9 ships `pve-enterprise` and `ceph` `.sources` files that need a subscription.
+  Disable them and add `pve-no-subscription` (suite `trixie`) **before the first `apt-get update`**, otherwise it fails with 401.
+- **`host-setup.sh template` printed `work: unbound variable` at the end.** Harmless, the template is created. It came from an
+  `EXIT` trap that referenced a function-local variable under `set -u`.
+- **`host-setup.sh nfs` fails with "Protocol not supported"** when the NAS has no NFS v4.1. Either enable v4.1 on the NAS or add the
+  storage with `--options vers=3`.
+- **Importing an old ESXi VM.** The guest was UEFI (GPT + EFI partition), so use `--bios ovmf` with
+  `--efidisk0 ...,pre-enrolled-keys=0`. Set `--cpu host`: a CentOS/RHEL 9 guest needs x86-64-v2 and the default `kvm64` fails.
+  Use a SATA disk and an `e1000` NIC, then fix the NetworkManager connection for the new interface name (`ens192` became `ens18`).
+- Secret values and the API token are never written in Git or in these docs.
+
 ## Next steps (done in Git, by Claude)
 1. `infra/nuc/terraform/`: provider `bpg/proxmox`, VM "lab" + "control" cloned from template 9000 with cloud-init
    (Docker, Tailscale, runner registration), state stored on the NAS.
