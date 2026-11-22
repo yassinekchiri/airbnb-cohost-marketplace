@@ -43,4 +43,18 @@ if [ "$action" != validate ]; then
   inner="test -f /nas/terraform/nuc-lab/.cohost-nas-marker || { echo 'ERROR: NAS not mounted on the control VM (run infra/nuc/control-nas-mount.sh)'; exit 1; }; $inner"
 fi
 
-exec docker run "${args[@]}" --entrypoint /bin/sh "$TF_IMAGE" -ec "$inner"
+rc=0
+docker run "${args[@]}" --entrypoint /bin/sh "$TF_IMAGE" -ec "$inner" || rc=$?
+if [ "$rc" -eq 125 ] && [ "$action" != validate ]; then
+  # 125 = docker itself refused to start the container; almost always a missing bind source.
+  cat >&2 <<MSG
+
+ERROR: $STATE_DIR or $SNIPPETS_DIR does not exist on the control VM: the NAS is not mounted there.
+One-time fix (infra/nuc/terraform/README.md, "One-time preparation"):
+  1. NAS: allow 192.168.1.200 read/write on the NFS export /volume1/CoHostBackup
+  2. Proxmox: Datacenter > Storage > nas > Content: tick Snippets
+  3. On VM 200, as root: bash infra/nuc/control-nas-mount.sh   (ends with "NAS ready at $NAS_MOUNT")
+Then re-run this job.
+MSG
+fi
+exit "$rc"
