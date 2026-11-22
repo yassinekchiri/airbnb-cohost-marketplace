@@ -70,6 +70,14 @@ Point DNS (Cloudflare) at the VM, then run **Deploy** once. The first run genera
 ### 5. NUC (optional, test only)
 Install Proxmox first (`docs/PROXMOX.md`), then in an Ubuntu VM on it: `GITHUB_REPO=owner/repo RUNNER_PAT=github_pat_... bash infra/nuc/bootstrap-runner-vm.sh`.
 The PAT is a fine-grained token with *Administration: read/write* on this one repository. Put the VM on an isolated VLAN.
+The runner lives on the `control` VM (VM 200) and registers with the label `nuc`, which is what `runs-on: [self-hosted, nuc]` in `lab.yml` and the staging job of `deploy.yml` selects.
+
+**PAT rotation (every 90 days).** The PAT is kept in `/opt/runner/.env` (mode 600) because the ephemeral runner re-registers after every job, so it
+stays on the VM until you replace it. Create it with a 90-day expiry and rotate it before then:
+1. GitHub > Settings > Developer settings > Fine-grained tokens: generate a new token (same repository, *Administration: read/write*, 90 days).
+2. On `control`: edit `/opt/runner/.env` (replace `RUNNER_PAT`, keep `GITHUB_REPO`), then `cd /opt/runner && docker compose up -d --force-recreate`.
+3. Check Settings > Actions > Runners shows a runner online with the label `nuc`, then **revoke the old token** on GitHub.
+Never paste the token in chat or commit it. An expired PAT makes the runner stop registering: the lab and staging jobs queue until it is replaced.
 
 ## Day-to-day
 - **Ship**: merge the PR. CI publishes the image; Deploy runs staging, then waits for your approval (GitHub mobile push notification).

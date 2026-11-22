@@ -17,6 +17,7 @@ Why things are the way they are: `docs/DECISIONS.md`.
   (API token created and stored in the owner's password manager; never in Git).
 - NFS storage `nas` was added by hand (the `nfs` step failed on this NAS, see below and `docs/DECISIONS.md`).
 - A second 1 TB SSD was added as LVM-thin storage `lab-thin`.
+- Reported by the owner: `control` is VM 200 and its GitHub runner is registered with the label `nuc`.
 - The old ESXi VM `cohost` was imported as VM 102 `cohost-2` and boots. VM 100 (failed first import) was destroyed.
 
 ## Verified on master
@@ -33,7 +34,8 @@ Why things are the way they are: `docs/DECISIONS.md`.
 |---|---|
 | GitHub environments | create `staging` (no rules) and `production` (required reviewer = owner, branch `master`) |
 | GitHub code security | Dependabot alerts + security updates, secret scanning, push protection (private repo: may need a paid plan) |
-| Control VM 200 | create by hand (clone of template 9000), run `infra/nuc/bootstrap-runner-vm.sh` on it, add the Proxmox API token as a GitHub secret |
+| Proxmox API token as a GitHub secret | for the lab Terraform; the value stays in the owner's password manager, never in Git |
+| Runner PAT rotation | every 90 days, procedure in `docs/CICD.md` section 5. Put a reminder in your calendar; an expired PAT stops the runner |
 | Cloud provider and domain | Hetzner vs Scaleway undecided; domain not chosen |
 | Deploy switch | when runner + VM + secrets exist, set the repository variable `DEPLOY_ENABLED=true` (Settings > Secrets and variables > Actions > Variables) |
 | Accounts and secrets | cloud, Cloudflare, Tailscale (tag `tag:ci`, OAuth client), SMTP provider, Sentry, uptime monitor; production secrets listed in `docs/CICD.md` section 2 |

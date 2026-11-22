@@ -22,6 +22,8 @@ Status: **settled**, **open** (needs the owner) or **superseded**.
 | 2026-11 | Storage: OS disk (256 GB SSD, ext4) holds `local` and `local-lvm`. VM disks go on `lab-thin` (LVM-thin, 1 TB SSD), not on `local-lvm` | The `local-lvm` thin pool is small and overcommitted | settled |
 | 2026-11 | NFS storage `nas` = 192.168.1.15:/volume1/CoHostBackup, mounted as NFS v3 because NFS v4.1 is not enabled on the NAS. It holds backups, ISOs, snippets and the lab Terraform state. An unrelated NFS storage `OS` also exists on the host; CoHost does not use it | Matches what the NAS supports today | settled |
 | 2026-11 | `control` is created by hand once (clone of template 9000); everything else goes through the pipeline | Chicken-and-egg: the runner that runs Terraform must exist first | settled |
+| 2026-11 | `control` (VM 200) hosts the GitHub runner, registered with the label `nuc` (the label `lab.yml` and the staging job use) | One runner for the lab; ephemeral, one job per container | settled |
+| 2026-11 | The runner PAT lives in `/opt/runner/.env` (mode 600) on `control` and is rotated every 90 days | The ephemeral runner needs it to re-register after each job; a short expiry limits the damage if the VM is compromised | settled |
 | - | **Cloud provider**: Hetzner Cloud (cheaper, about 60-80 ms to Morocco) vs Scaleway Paris (about 40-60 ms, managed Postgres, higher price) | Leaning Hetzner on cost | **open** |
 | - | **Domain name** | Not chosen yet | **open** |
 | - | Proxmox storage: ext4 vs ZFS | Depends on the NUC's RAM and the owner's wish for ZFS snapshots | **open** |
