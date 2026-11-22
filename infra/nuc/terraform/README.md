@@ -29,10 +29,12 @@ so state can never land on the VM's local disk.
 | Kind | Name | Value | Required |
 |---|---|---|---|
 | repository **secret** | `PROXMOX_VE_API_TOKEN` | `terraform@pve!provider=<token secret>`: the full id, `=`, then the UUID printed once by `host-setup.sh terraform` | yes |
-| repository **secret** | `NUC_LAB_TAILSCALE_AUTHKEY` | Tailscale auth key: reusable, ephemeral, pre-approved, tagged (e.g. `tag:lab`) | no: without it Tailscale is installed but not joined |
-| repository **variable** | `NUC_LAB_SSH_AUTHORIZED_KEYS` | your SSH **public** key(s), one per line | no: without it, log in through the Proxmox console only |
+| repository **secret** | `NUC_LAB_TAILSCALE_AUTHKEY` | Tailscale auth key: reusable, pre-approved, tagged (e.g. `tag:lab`), **not** ephemeral (see "Tailscale" below) | no: without it Tailscale is installed but not joined |
+| repository **variable** (Variables tab, **not** Secrets) | `NUC_LAB_SSH_AUTHORIZED_KEYS` | SSH **public** key(s), one per line | in practice yes: without it **nobody can log in** (user `cohost` has no password, root is locked) |
 
 Settings > Secrets and variables > Actions. Repository level (not an environment), because PR plans need the token.
+A secret named `NUC_LAB_SSH_AUTHORIZED_KEYS` is **ignored**: the workflow reads `vars.`, not `secrets.` (this happened once;
+the run log then shows `TF_VAR_ssh_authorized_keys:` empty). Changing the keys replaces VM 210 on the next apply.
 Do **not** set `DEPLOY_ENABLED` for this; it only gates `deploy.yml`.
 
 ## One-time preparation (owner, before merging the PR)
@@ -50,6 +52,21 @@ Do **not** set `DEPLOY_ENABLED` for this; it only gates `deploy.yml`.
 
 Merging then creates the VM. First boot takes a few minutes (package upgrade, Docker, Tailscale);
 `/var/lib/cohost-lab-ready` exists when cloud-init is done (`cloud-init status --wait`).
+
+## Logging in
+No laptop needed: the key pair lives on the Proxmox host.
+```bash
+# once, in Proxmox > myproxmox > Shell; put the .pub line in NUC_LAB_SSH_AUTHORIZED_KEYS, then run apply
+ssh-keygen -t ed25519 -f ~/.ssh/cohost-lab -N "" -C cohost-lab && cat ~/.ssh/cohost-lab.pub
+ssh -i ~/.ssh/cohost-lab cohost@192.168.1.210     # cohost has passwordless sudo and is in the docker group
+```
+Health check on the VM: `cloud-init status --wait` (`status: done`), `docker run --rm hello-world`, `sudo tailscale status`.
+
+## Tailscale
+The node name is `cohost-lab`. A rebuild (destroy + create, or any cloud-init change) leaves the old node registered,
+offline, so the new VM joins as `cohost-lab-1`. After a rebuild: Tailscale admin console > Machines, remove the offline
+`cohost-lab`, rename `cohost-lab-1` to `cohost-lab`. An ephemeral key would remove old nodes by itself, but the VM would
+then drop off the tailnet after any NUC power-off and only come back on the next apply (cloud-init deletes the key after use).
 
 ## Rebuild drill
 Actions > NUC Terraform > Run workflow (branch `master`): `destroy`, then `apply`. Only VM 210 and its

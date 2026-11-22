@@ -18,6 +18,8 @@ Status: **settled**, **open** (needs the owner) or **superseded**.
 | 2026-11 | `PROXMOX_VE_API_TOKEN` is a **repository** secret | PR plans need it; same-repo PRs only (forks and Dependabot are excluded by the workflow) | settled |
 | 2026-11 | Proxmox API TLS not verified (`insecure = true`) | Self-signed node certificate, LAN only; switch to `SSL_CERT_FILE` with `pve-root-ca.pem` later if wanted | settled |
 | 2026-11 | Lab VM has the QEMU agent **disabled** in Proxmox | With it on, the provider waits for guest IPs, which needs privileges not in `TerraformProv`; the IP is static anyway | settled |
+| 2026-11 | Lab Tailscale auth key is reusable but **not ephemeral**; the stale node is removed by hand after a rebuild | An ephemeral node vanishes after a NUC power-off and cannot rejoin until the next apply; rebuilds are rare | settled |
+| 2026-11 | Lab login: SSH key only (variable `NUC_LAB_SSH_AUTHORIZED_KEYS`), key pair kept on the Proxmox host; no console password | No laptop; the Proxmox web shell is always available; no password to leak | settled |
 | 2026-11 | `lab.yml` and staging run their compose stacks on the control VM; smoke test via `docker run --network host` | Simplest wiring to the existing runner. Moving the stacks onto the lab VM (better isolation) is a later option | settled |
 | 2026-11 | Trivy runs from the official `aquasec/trivy` image, not `aquasecurity/trivy-action` | The action's `setup-trivy` dependency could not be resolved | settled |
 | 2026-11 | Trivy skips `pip/_vendor/bom.cdx.json` only | pip's vendored SBOM lists `setuptools 70.3.0` (false positive CVE-2025-47273); the real setuptools is >= 78.1.1. Installed packages are still scanned | settled |
