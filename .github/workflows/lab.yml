@@ -2,6 +2,7 @@ name: NUC lab
 
 # On-demand: build ANY branch on the home NUC and run the full stack + smoke test.
 # Actions > "NUC lab" > Run workflow. The stack is destroyed afterwards.
+# Runs on the self-hosted runner (label nuc) in the hand-made "control" VM 200 (docs/PROXMOX.md).
 on:
   workflow_dispatch:
     inputs:
@@ -33,7 +34,12 @@ jobs:
       - name: Up
         env: { WEB_IMAGE: cohost-web:lab }
         run: docker compose -f docker-compose.ci.yml up -d --wait --wait-timeout 180
-      - run: python3 deploy/smoke.py http://127.0.0.1:8082
+      - name: Smoke test (full flow)
+        # Runs on the control VM's host network: the published port is 127.0.0.1 of the VM, which a
+        # containerised runner (infra/nuc/runner-compose.yml) cannot reach from its own namespace.
+        run: >-
+          docker run --rm --network host --mount "type=bind,src=$GITHUB_WORKSPACE/deploy,dst=/smoke,readonly"
+          python:3.12-alpine python /smoke/smoke.py http://127.0.0.1:8082
       - name: Logs on failure
         if: failure()
         run: docker compose -f docker-compose.ci.yml logs --no-color --tail=200

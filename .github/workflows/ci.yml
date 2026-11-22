@@ -29,7 +29,11 @@ jobs:
       - name: Lint workflows
         run: actionlint
       - name: Lint shell scripts
-        run: bash -n setup.sh && bash -n deploy/remote-deploy.sh && bash -n deploy/server-bootstrap.sh && bash -n infra/proxmox/host-setup.sh
+        run: |
+          for f in setup.sh deploy/remote-deploy.sh deploy/server-bootstrap.sh infra/proxmox/host-setup.sh \
+                   infra/nuc/terraform/tf.sh infra/nuc/control-nas-mount.sh; do
+            bash -n "$f"
+          done
 
   test:
     name: test (${{ matrix.db }})

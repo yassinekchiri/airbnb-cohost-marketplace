@@ -1,0 +1,51 @@
+#cloud-config
+# Rendered by infra/nuc/terraform (main.tf). Written to the NAS as a Proxmox snippet.
+hostname: ${hostname}
+manage_etc_hosts: true
+ssh_pwauth: false
+disable_root: true
+
+users:
+  - name: ${admin_user}
+    gecos: CoHost lab admin
+    shell: /bin/bash
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    lock_passwd: true
+%{ if length(ssh_keys) > 0 ~}
+    ssh_authorized_keys:
+%{ for k in ssh_keys ~}
+      - ${jsonencode(k)}
+%{ endfor ~}
+%{ endif ~}
+
+package_update: true
+package_upgrade: true
+packages:
+  - ca-certificates
+  - curl
+  - python3
+  - qemu-guest-agent
+  - unattended-upgrades
+
+%{ if tailscale_auth_key != "" ~}
+write_files:
+  - path: /etc/cohost/tailscale-authkey
+    owner: root:root
+    permissions: "0600"
+    content: ${jsonencode(tailscale_auth_key)}
+%{ endif ~}
+
+runcmd:
+  - [systemctl, enable, --now, qemu-guest-agent]
+  # Same installers as infra/nuc/bootstrap-runner-vm.sh and deploy/server-bootstrap.sh.
+  - [sh, -c, "command -v docker >/dev/null || curl -fsSL https://get.docker.com | sh"]
+  - [systemctl, enable, --now, docker]
+  - [usermod, -aG, docker, ${admin_user}]
+  - [sh, -c, "command -v tailscale >/dev/null || curl -fsSL https://tailscale.com/install.sh | sh"]
+%{ if tailscale_auth_key != "" ~}
+  - [sh, -c, "tailscale up --auth-key=file:/etc/cohost/tailscale-authkey --hostname=${tailscale_hostname}; rm -f /etc/cohost/tailscale-authkey"]
+%{ endif ~}
+  - [sh, -c, "echo '30 4 * * * root docker system prune -af --filter until=48h >/dev/null 2>&1' > /etc/cron.d/docker-prune"]
+  - [touch, /var/lib/cohost-lab-ready]
+
+final_message: "cohost lab ready after $UPTIME s (marker: /var/lib/cohost-lab-ready)"

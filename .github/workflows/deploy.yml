@@ -60,6 +60,7 @@ jobs:
     name: staging (NUC)
     needs: resolve
     if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.skip_staging) }}
+    # Self-hosted runner (label nuc) in the "control" VM 200 on the NUC (docs/PROXMOX.md).
     runs-on: [self-hosted, nuc]
     timeout-minutes: 20
     environment: staging
@@ -73,7 +74,10 @@ jobs:
         env: { WEB_IMAGE: "${{ needs.resolve.outputs.ref }}", WEB_PORT: "8081" }
         run: docker compose -p cohost-staging -f docker-compose.ci.yml up -d --wait --wait-timeout 180 --pull always --force-recreate
       - name: Smoke test (full flow)
-        run: python3 deploy/smoke.py http://127.0.0.1:8081
+        # Host network of the control VM: see lab.yml (works for a containerised or a native runner).
+        run: >-
+          docker run --rm --network host --mount "type=bind,src=$GITHUB_WORKSPACE/deploy,dst=/smoke,readonly"
+          python:3.12-alpine python /smoke/smoke.py http://127.0.0.1:8081
       - name: Logs on failure
         if: failure()
         run: docker compose -p cohost-staging -f docker-compose.ci.yml logs --no-color --tail=200
