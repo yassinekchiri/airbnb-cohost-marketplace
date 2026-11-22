@@ -17,6 +17,9 @@ Why things are the way they are: `docs/DECISIONS.md`.
   state and cloud-init snippets on the NAS. Workflow `nuc-terraform.yml`: validate + plan on PRs, apply on merge, manual destroy/apply.
 - Lab VM 210 **created by `apply` on master** (2026-11-22, run after #19): `Apply complete! Resources: 2 added`. Rebuilt once
   through the workflow to add the SSH key. Checked by the owner on the VM: `cloud-init status` done, Docker runs, on the tailnet.
+- `lab.yml` verified on master (2026-11-22, run 45044796053): build on the NUC, compose up, `SMOKE PASSED` (17 checks), stack removed.
+- Rebuild drill verified (2026-11-22): NUC Terraform `destroy` (2 destroyed, only VM 210 + snippet) then `apply` (2 added),
+  same IP and snippet: the lab VM is rebuilt from Git + the NAS alone.
 - `lab.yml` and the staging job of `deploy.yml` target the control runner; their smoke test runs on the VM's host network
   (works whether the runner is a container or native).
 
@@ -27,8 +30,8 @@ Why things are the way they are: `docs/DECISIONS.md`.
 
 ## Not verified
 - `infra/proxmox/host-setup.sh` end to end (the owner set up Proxmox; which steps of the script were used is unknown).
-- The `destroy` action of `nuc-terraform.yml` on its own (VM 210 was replaced by `apply`, which destroys first, but a plain destroy never ran).
-- `lab.yml` and the staging job on the control runner (never run).
+- The staging job of `deploy.yml` on the control runner (never run; needs `DEPLOY_ENABLED` and the `staging` environment).
+- Restoring a `pg_dump` from the NAS (nothing to restore yet: no environment keeps data).
 - The deploy, rollback and verify steps of `deploy.yml` (never run; needs a runner, a VM and secrets).
 
 ## Blocked on the owner
@@ -47,9 +50,9 @@ Why things are the way they are: `docs/DECISIONS.md`.
    Treat `gunicorn` (#9) and `redis` (#12) with care (production-facing); read their release notes first.
 2. (done) Signed image publishing verified; deploys gated behind `DEPLOY_ENABLED`.
 3. (done) `infra/nuc/terraform/`: lab VM 210 live, plan on PRs and apply on merge both verified on the NUC runner.
-4. Run `lab.yml` once on `master` (first run of the full stack + smoke on the control runner), then the staging job when deploys are enabled.
-5. Rebuild drill: Actions > NUC Terraform > `destroy` then `apply`, restore the latest `pg_dump` from the NAS.
-   Optional: move the lab/staging compose stacks from the control VM onto the lab VM (isolates the runner host from branch code).
+4. (done) `lab.yml` once on `master`; rebuild drill (`destroy` + `apply`). Left: the staging job once deploys are enabled,
+   and a `pg_dump` restore drill once staging or production keeps data.
+5. Optional: move the lab/staging compose stacks from the control VM onto the lab VM (isolates the runner host from branch code).
 6. After provider and domain are chosen: Terraform for the cloud VM, buckets and DNS, then the first production deploy.
 
 ## Open product work
