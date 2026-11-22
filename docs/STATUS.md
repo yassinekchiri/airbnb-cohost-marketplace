@@ -15,6 +15,8 @@ Why things are the way they are: `docs/DECISIONS.md`.
   The "control" VM 200 (192.168.1.200) was made by hand and runs the GitHub runner (label `nuc`).
 - `infra/nuc/terraform/` (provider `bpg/proxmox`): disposable "lab" VM 210 (192.168.1.210), cloud-init Docker + Tailscale,
   state and cloud-init snippets on the NAS. Workflow `nuc-terraform.yml`: validate + plan on PRs, apply on merge, manual destroy/apply.
+- Lab VM 210 **created by `apply` on master** (2026-11-22, run after #19): `Apply complete! Resources: 2 added`. Rebuilt once
+  through the workflow to add the SSH key. Checked by the owner on the VM: `cloud-init status` done, Docker runs, on the tailnet.
 - `lab.yml` and the staging job of `deploy.yml` target the control runner; their smoke test runs on the VM's host network
   (works whether the runner is a container or native).
 
@@ -25,8 +27,7 @@ Why things are the way they are: `docs/DECISIONS.md`.
 
 ## Not verified
 - `infra/proxmox/host-setup.sh` end to end (the owner set up Proxmox; which steps of the script were used is unknown).
-- `infra/nuc/terraform/` apply (never run). Verified on the PR (2026-11-22): `validate` green, and `plan` on the NUC runner
-  against the real node reads the NAS state and shows `2 to add, 0 to change, 0 to destroy` (snippet + VM 210).
+- The `destroy` action of `nuc-terraform.yml` on its own (VM 210 was replaced by `apply`, which destroys first, but a plain destroy never ran).
 - `lab.yml` and the staging job on the control runner (never run).
 - The deploy, rollback and verify steps of `deploy.yml` (never run; needs a runner, a VM and secrets).
 
@@ -38,18 +39,18 @@ Why things are the way they are: `docs/DECISIONS.md`.
 | Cloud provider and domain | Hetzner vs Scaleway undecided; domain not chosen |
 | Deploy switch | when runner + VM + secrets exist, set the repository variable `DEPLOY_ENABLED=true` (Settings > Secrets and variables > Actions > Variables) |
 | Accounts and secrets | cloud, Cloudflare, Tailscale (tag `tag:ci`, OAuth client), SMTP provider, Sentry, uptime monitor; production secrets listed in `docs/CICD.md` section 2 |
+| Tailscale tidy-up after a lab rebuild | Machines: remove the offline `cohost-lab`, rename `cohost-lab-1` to `cohost-lab` (see `infra/nuc/terraform/README.md`) |
 | Legal | CNDP declaration (Law 09-08) and a local lawyer's view on hosting abroad |
 
 ## Next steps for Claude (in order)
 1. Triage the open Dependabot PRs #2, #3, #6, #7, #9, #11, #12: ask Dependabot to rebase, merge those with green CI.
    Treat `gunicorn` (#9) and `redis` (#12) with care (production-facing); read their release notes first.
 2. (done) Signed image publishing verified; deploys gated behind `DEPLOY_ENABLED`.
-3. (done, unverified) `infra/nuc/terraform/` for the "lab" VM; `lab.yml` and staging wired to the control runner.
-   `validate` passed against the real provider (bpg/proxmox 0.123.1, lock file committed). Owner prerequisites done, PR plan verified.
-   Next: merge (runs `apply`, creates VM 210), check cloud-init on the VM, then run `lab.yml` once.
-4. Rebuild drill: Actions > NUC Terraform > `destroy` then `apply`, restore the latest `pg_dump` from the NAS.
+3. (done) `infra/nuc/terraform/`: lab VM 210 live, plan on PRs and apply on merge both verified on the NUC runner.
+4. Run `lab.yml` once on `master` (first run of the full stack + smoke on the control runner), then the staging job when deploys are enabled.
+5. Rebuild drill: Actions > NUC Terraform > `destroy` then `apply`, restore the latest `pg_dump` from the NAS.
    Optional: move the lab/staging compose stacks from the control VM onto the lab VM (isolates the runner host from branch code).
-5. After provider and domain are chosen: Terraform for the cloud VM, buckets and DNS, then the first production deploy.
+6. After provider and domain are chosen: Terraform for the cloud VM, buckets and DNS, then the first production deploy.
 
 ## Open product work
 Celery async scraping + isolated scraper image (Phase 6); media to object storage (django-storages);
