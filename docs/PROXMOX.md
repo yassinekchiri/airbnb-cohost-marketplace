@@ -7,8 +7,8 @@ wiped and rebuilt from **Git + the NAS** at any time (see `docs/CICD.md`).
 ```
 NUC (Proxmox VE)
  ├─ template 9000  Ubuntu 24.04 cloud-init   <- infra/proxmox/host-setup.sh template
- ├─ LXC/VM "control"  GitHub runner (label nuc) + Terraform   <- next step, Terraform
- └─ VM "lab"          docker compose stack under test          <- next step, Terraform
+ ├─ VM 200 "control"  GitHub runner (label nuc) + Terraform   <- made by hand, never managed by Terraform
+ └─ VM 210 "lab"      Docker + Tailscale, disposable          <- infra/nuc/terraform
 NAS (NFS)  backups (vzdump, pg_dump), ISOs, cloud-init snippets, Terraform state of the lab
 ```
 
@@ -70,7 +70,7 @@ qm list               # shows template 9000
 ```
 
 ## Next steps (done in Git, by Claude)
-1. `infra/nuc/terraform/`: provider `bpg/proxmox`, VM "lab" + "control" cloned from template 9000 with cloud-init
-   (Docker, Tailscale, runner registration), state stored on the NAS.
-2. Wire `lab.yml` and the staging job of `deploy.yml` to the new runner.
+1. (done) `infra/nuc/terraform/`: provider `bpg/proxmox`, VM "lab" (210) cloned from template 9000 with cloud-init
+   (Docker, Tailscale), state on the NAS. "control" (200) stays hand-made. Prerequisites: `infra/nuc/terraform/README.md`.
+2. (done) `lab.yml` and the staging job of `deploy.yml` run on the control runner.
 3. Rebuild drill: `terraform destroy && terraform apply`, then restore the last `pg_dump` from the NAS.

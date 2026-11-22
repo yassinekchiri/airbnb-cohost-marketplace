@@ -1,0 +1,84 @@
+name: NUC Terraform
+
+# infra/nuc/terraform: the disposable "lab" VM on the home Proxmox node.
+#   PR touching it      -> validate (GitHub-hosted) + plan (NUC runner)
+#   merge to master     -> validate + apply (NUC runner)
+#   Run workflow        -> plan | apply | destroy, from master only (rebuild drill: destroy, then apply)
+# Not a required check: a powered-off NUC must never block a merge (docs/DECISIONS.md).
+on:
+  pull_request:
+    paths: [infra/nuc/terraform/**, .github/workflows/nuc-terraform.yml]
+  push:
+    branches: [master]
+    paths: [infra/nuc/terraform/**, .github/workflows/nuc-terraform.yml]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Terraform action (apply/destroy run only on master)"
+        type: choice
+        options: [plan, apply, destroy]
+        default: plan
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: fmt + validate (no state, no credentials)
+        run: infra/nuc/terraform/tf.sh validate
+      - name: Show the provider lock file to commit (if missing)
+        run: |
+          if ! git ls-files --error-unmatch infra/nuc/terraform/.terraform.lock.hcl >/dev/null 2>&1; then
+            echo "::notice::infra/nuc/terraform/.terraform.lock.hcl is not committed; generated copy below"
+            cat infra/nuc/terraform/.terraform.lock.hcl
+          fi
+
+  plan:
+    needs: validate
+    # Same-repo PRs only (secrets are not given to forks or Dependabot), or a manual plan.
+    if: >-
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        && github.actor != 'dependabot[bot]')
+      || (github.event_name == 'workflow_dispatch' && inputs.action == 'plan')
+    runs-on: [self-hosted, nuc]
+    timeout-minutes: 20
+    concurrency: { group: "nuc-terraform-plan-${{ github.ref }}", cancel-in-progress: true }
+    env:
+      PROXMOX_VE_API_TOKEN: ${{ secrets.PROXMOX_VE_API_TOKEN }}
+      TF_VAR_tailscale_auth_key: ${{ secrets.NUC_LAB_TAILSCALE_AUTHKEY }}
+      TF_VAR_ssh_authorized_keys: ${{ vars.NUC_LAB_SSH_AUTHORIZED_KEYS }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: terraform plan
+        run: |
+          set -o pipefail
+          infra/nuc/terraform/tf.sh plan | tee "$RUNNER_TEMP/plan.txt"
+      - name: Plan summary
+        if: always()
+        run: |
+          [ -f "$RUNNER_TEMP/plan.txt" ] || exit 0
+          { echo '### terraform plan (infra/nuc/terraform)'; echo '```'; tail -c 60000 "$RUNNER_TEMP/plan.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+  apply:
+    needs: validate
+    if: >-
+      github.ref == 'refs/heads/master'
+      && (github.event_name == 'push'
+        || (github.event_name == 'workflow_dispatch' && contains(fromJSON('["apply","destroy"]'), inputs.action)))
+    runs-on: [self-hosted, nuc]
+    timeout-minutes: 45
+    # Never cancel a running apply; Terraform's state lock (-lock-timeout) also serialises with plans.
+    concurrency: { group: nuc-terraform-apply, cancel-in-progress: false }
+    env:
+      PROXMOX_VE_API_TOKEN: ${{ secrets.PROXMOX_VE_API_TOKEN }}
+      TF_VAR_tailscale_auth_key: ${{ secrets.NUC_LAB_TAILSCALE_AUTHKEY }}
+      TF_VAR_ssh_authorized_keys: ${{ vars.NUC_LAB_SSH_AUTHORIZED_KEYS }}
+      ACTION: ${{ github.event_name == 'workflow_dispatch' && inputs.action || 'apply' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: terraform ${{ env.ACTION }}
+        run: infra/nuc/terraform/tf.sh "$ACTION"

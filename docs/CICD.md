@@ -23,6 +23,7 @@ The NUC only gates *staging*, and that gate has a manual bypass (below).
 | `deploy.yml` | CI success on master, or manual | GitHub + NUC | verify signature, NUC staging, approval, production, auto-rollback |
 | `nightly.yml` | 03:17 UTC | GitHub | new CVEs in dependencies / the published image |
 | `lab.yml` | manual | NUC | build any branch on the NUC, run the full stack + smoke |
+| `nuc-terraform.yml` | PR / push to master touching `infra/nuc/terraform/`, manual | GitHub (validate) + NUC | plan on PRs, apply on merge, manual destroy/apply of the lab VM (`infra/nuc/terraform/README.md`) |
 
 ## One-time setup (about 30 minutes, all doable in a browser)
 
@@ -68,7 +69,8 @@ It installs Docker + Tailscale, creates the `deploy` user, locks SSH to the tail
 Point DNS (Cloudflare) at the VM, then run **Deploy** once. The first run generates secrets and starts everything.
 
 ### 5. NUC (optional, test only)
-Install Proxmox first (`docs/PROXMOX.md`), then in an Ubuntu VM on it: `GITHUB_REPO=owner/repo RUNNER_PAT=github_pat_... bash infra/nuc/bootstrap-runner-vm.sh`.
+The runner lives in the hand-made "control" VM 200 (192.168.1.200). The lab VM is Terraform-managed: see `infra/nuc/terraform/README.md`
+(secret `PROXMOX_VE_API_TOKEN`, NAS mount on the control VM). To rebuild the control VM: install Proxmox first (`docs/PROXMOX.md`), then in an Ubuntu VM on it: `GITHUB_REPO=owner/repo RUNNER_PAT=github_pat_... bash infra/nuc/bootstrap-runner-vm.sh`.
 The PAT is a fine-grained token with *Administration: read/write* on this one repository. Put the VM on an isolated VLAN.
 
 ## Day-to-day
