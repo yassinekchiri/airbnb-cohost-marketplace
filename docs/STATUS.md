@@ -26,7 +26,7 @@ Why things are the way they are: `docs/DECISIONS.md`.
 ## Not verified
 - `infra/proxmox/host-setup.sh` end to end (the owner set up Proxmox; which steps of the script were used is unknown).
 - `infra/nuc/terraform/`: never planned or applied against the real node (Claude cannot reach the LAN, and the bpg provider
-  could not be downloaded in the Claude sandbox). The PR's `validate` job checks it against the real provider schema.
+  could not be downloaded in the Claude sandbox). `validate` (fmt + schema) is green on the PR.
 - `lab.yml` and the staging job on the control runner (never run).
 - The deploy, rollback and verify steps of `deploy.yml` (never run; needs a runner, a VM and secrets).
 
@@ -48,7 +48,7 @@ Why things are the way they are: `docs/DECISIONS.md`.
    Treat `gunicorn` (#9) and `redis` (#12) with care (production-facing); read their release notes first.
 2. (done) Signed image publishing verified; deploys gated behind `DEPLOY_ENABLED`.
 3. (done, unverified) `infra/nuc/terraform/` for the "lab" VM; `lab.yml` and staging wired to the control runner.
-   Next: commit `.terraform.lock.hcl` (printed by the `validate` job); after the owner's prerequisites, check the PR plan
+   `validate` passed against the real provider (bpg/proxmox 0.123.1, lock file committed). Next: after the owner's prerequisites, check the PR plan
    (`2 to add`, nothing else), merge, then run `lab.yml` once.
 4. Rebuild drill: Actions > NUC Terraform > `destroy` then `apply`, restore the latest `pg_dump` from the NAS.
    Optional: move the lab/staging compose stacks from the control VM onto the lab VM (isolates the runner host from branch code).

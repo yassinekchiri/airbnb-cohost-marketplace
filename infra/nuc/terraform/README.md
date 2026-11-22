@@ -62,4 +62,4 @@ snippet are touched. Editing `cloud-init/lab.yaml.tftpl` also replaces the VM on
 - The state and the snippet contain the Tailscale auth key if one is set. Both live on the NAS, not in Git.
 - The control VM can write to the whole `CoHostBackup` share (NFS v3 permissions are per export).
   Jobs on the runner are root-equivalent on that VM, so keep NAS snapshots on for this share.
-- `.terraform.lock.hcl` is not committed yet: the `validate` job prints the generated one; commit it to pin provider hashes.
+- `.terraform.lock.hcl` pins bpg/proxmox 0.123.1 and hashicorp/local 2.9.1 (linux_amd64 hashes). Upgrade: `terraform init -upgrade` in the validate job, commit the printed file.
