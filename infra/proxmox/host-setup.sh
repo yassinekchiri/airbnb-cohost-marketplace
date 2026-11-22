@@ -16,6 +16,10 @@ NAS_STORAGE_ID="${NAS_STORAGE_ID:-nas}"
 IMAGE_URL="${IMAGE_URL:-https://cloud-images.ubuntu.com/noble/current}"
 IMAGE_FILE="noble-server-cloudimg-amd64.img"
 
+WORK_DIR=""
+cleanup() { if [ -n "${WORK_DIR:-}" ]; then rm -rf "$WORK_DIR"; fi; }
+trap cleanup EXIT
+
 die() { echo "ERROR: $*" >&2; exit 1; }
 log() { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
 
@@ -31,9 +35,16 @@ cmd_repos() {
   log "Proxmox $(pveversion | cut -d/ -f2) on Debian ${codename}: switching to the no-subscription repository"
   local d=/etc/apt/sources.list.d
   mkdir -p /root/apt-disabled
-  # Enterprise repos need a paid subscription and make 'apt update' fail; park them, never delete.
-  for f in "$d"/pve-enterprise.* "$d"/ceph.*; do
-    [ -e "$f" ] && mv -f "$f" /root/apt-disabled/ || true
+  # Enterprise repos need a paid subscription: without it 'apt-get update' fails with 401.
+  # Park every source that points at enterprise.proxmox.com (pve-enterprise, ceph, any name, .list or .sources).
+  # Parked, never deleted. This runs before the first apt-get, and is safe to re-run.
+  local f
+  for f in "$d"/*.sources "$d"/*.list; do
+    [ -e "$f" ] || continue
+    if grep -q "enterprise.proxmox.com" "$f"; then
+      mv -f "$f" /root/apt-disabled/
+      log "disabled $(basename "$f")"
+    fi
   done
   if [ "$codename" = "bookworm" ]; then
     echo "deb http://download.proxmox.com/debian/pve ${codename} pve-no-subscription" > "$d/pve-no-subscription.list"
@@ -59,8 +70,15 @@ cmd_nfs() {
   else
     log "adding NFS storage '$NAS_STORAGE_ID' (${NAS_IP}:${NAS_EXPORT})"
     # backup = vzdump + pg_dump copies; iso/vztmpl = installers and CT templates; snippets = cloud-init files.
-    pvesm add nfs "$NAS_STORAGE_ID" --server "$NAS_IP" --export "$NAS_EXPORT" \
-      --content backup,iso,vztmpl,snippets --options vers=4.1
+    add_nfs() {
+      pvesm add nfs "$NAS_STORAGE_ID" --server "$NAS_IP" --export "$NAS_EXPORT" \
+        --content backup,iso,vztmpl,snippets --options "vers=$1"
+    }
+    if ! add_nfs 4.1; then
+      log "NFS v4.1 failed (often 'Protocol not supported': not enabled on the NAS). Retrying with NFS v3."
+      pvesm remove "$NAS_STORAGE_ID" >/dev/null 2>&1 || true
+      add_nfs 3
+    fi
   fi
   pvesm status | grep -E "^(Name|${NAS_STORAGE_ID}) "
 }
@@ -69,7 +87,8 @@ cmd_template() {
   if qm status "$TEMPLATE_ID" >/dev/null 2>&1; then
     log "VM ${TEMPLATE_ID} already exists, nothing to do"; return
   fi
-  local work; work="$(mktemp -d)"; trap 'rm -rf "$work"' EXIT
+  WORK_DIR="$(mktemp -d)"
+  local work="$WORK_DIR"
   log "downloading the Ubuntu 24.04 cloud image and verifying its checksum"
   curl -fsSL -o "$work/$IMAGE_FILE" "$IMAGE_URL/$IMAGE_FILE"
   curl -fsSL -o "$work/SHA256SUMS" "$IMAGE_URL/SHA256SUMS"

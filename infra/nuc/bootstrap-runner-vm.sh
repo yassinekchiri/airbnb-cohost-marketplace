@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
-# Run once, as root, inside a fresh Ubuntu 24.04 VM on the NUC (ESXi).
+# Run once, as root, inside a fresh Ubuntu 24.04 VM on the NUC (Proxmox: the "control" VM 200).
 #   GITHUB_REPO=owner/repo RUNNER_PAT=github_pat_xxx bash bootstrap-runner-vm.sh
+#
+# The PAT is stored in /opt/runner/.env (mode 600) so the ephemeral runner can re-register after every job.
+# That file is the one place the PAT lives on the VM. Give the PAT a 90-day expiry and rotate it: docs/CICD.md section 5.
 set -euo pipefail
+# Resolve this script's directory BEFORE any cd, so a relative invocation still finds runner-compose.yml.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 : "${GITHUB_REPO:?}" "${RUNNER_PAT:?}"
 
 apt-get update -y && apt-get install -y ca-certificates curl ufw unattended-upgrades python3
@@ -14,7 +19,7 @@ ufw allow from "${ADMIN_CIDR:-192.168.0.0/16}" to any port 22 proto tcp
 ufw --force enable
 
 install -d -m 700 /opt/runner && cd /opt/runner
-cp "$(dirname "$0")/runner-compose.yml" docker-compose.yml
+cp "$SCRIPT_DIR/runner-compose.yml" docker-compose.yml
 umask 077
 printf 'GITHUB_REPO=%s\nRUNNER_PAT=%s\n' "$GITHUB_REPO" "$RUNNER_PAT" > .env
 docker compose up -d
