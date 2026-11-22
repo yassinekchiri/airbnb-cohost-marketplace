@@ -35,9 +35,6 @@ Why things are the way they are: `docs/DECISIONS.md`.
 |---|---|
 | GitHub environments | create `staging` (no rules) and `production` (required reviewer = owner, branch `master`) |
 | GitHub code security | Dependabot alerts + security updates, secret scanning, push protection (private repo: may need a paid plan) |
-| Install Proxmox on the NUC | follow `docs/PROXMOX.md`; wipes ESXi |
-| NUC Terraform prerequisites | NAS: NFS read/write for 192.168.1.200 on `/volume1/CoHostBackup`; Proxmox: content **Snippets** on storage `nas`; run `infra/nuc/control-nas-mount.sh` as root on VM 200; keep .200-.220 out of DHCP (details: `infra/nuc/terraform/README.md`) |
-| NUC Terraform secrets | repository secret `PROXMOX_VE_API_TOKEN` (`terraform@pve!provider=<uuid>`); optional secret `NUC_LAB_TAILSCALE_AUTHKEY`, optional variable `NUC_LAB_SSH_AUTHORIZED_KEYS` |
 | Cloud provider and domain | Hetzner vs Scaleway undecided; domain not chosen |
 | Deploy switch | when runner + VM + secrets exist, set the repository variable `DEPLOY_ENABLED=true` (Settings > Secrets and variables > Actions > Variables) |
 | Accounts and secrets | cloud, Cloudflare, Tailscale (tag `tag:ci`, OAuth client), SMTP provider, Sentry, uptime monitor; production secrets listed in `docs/CICD.md` section 2 |
