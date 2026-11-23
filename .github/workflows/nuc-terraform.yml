@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: fmt + validate (no state, no credentials)
         run: infra/nuc/terraform/tf.sh validate
       - name: Show the provider lock file to commit (if missing)
@@ -52,7 +52,7 @@ jobs:
       TF_VAR_tailscale_auth_key: ${{ secrets.NUC_LAB_TAILSCALE_AUTHKEY }}
       TF_VAR_ssh_authorized_keys: ${{ vars.NUC_LAB_SSH_AUTHORIZED_KEYS }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: terraform plan
         run: |
           set -o pipefail
@@ -79,6 +79,6 @@ jobs:
       TF_VAR_ssh_authorized_keys: ${{ vars.NUC_LAB_SSH_AUTHORIZED_KEYS }}
       ACTION: ${{ github.event_name == 'workflow_dispatch' && inputs.action || 'apply' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: terraform ${{ env.ACTION }}
         run: infra/nuc/terraform/tf.sh "$ACTION"

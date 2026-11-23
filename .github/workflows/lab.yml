@@ -27,7 +27,7 @@ jobs:
       COMPOSE_PROJECT_NAME: cohost-lab-${{ github.run_id }}
       WEB_PORT: "8082"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with: { ref: "${{ inputs.ref }}" }
       - name: Build from source on the NUC
         run: docker build -t cohost-web:lab .
