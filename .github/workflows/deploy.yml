@@ -33,7 +33,7 @@ jobs:
       ref: ${{ steps.pin.outputs.ref }}
       sha: ${{ steps.pin.outputs.sha }}
     steps:
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
       - uses: sigstore/cosign-installer@v3
       - id: pin
@@ -67,8 +67,8 @@ jobs:
     permissions: { contents: read, packages: read }
     concurrency: { group: nuc-staging, cancel-in-progress: false }
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@v7
+      - uses: docker/login-action@v4
         with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
       - name: Start the exact image that will ship
         env: { WEB_IMAGE: "${{ needs.resolve.outputs.ref }}", WEB_PORT: "8081" }
@@ -100,9 +100,9 @@ jobs:
       SITE_URL: ${{ vars.SITE_URL }}
       IMAGE_REF: ${{ needs.resolve.outputs.ref }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Join the tailnet (ephemeral node, tag:ci)
-        uses: tailscale/github-action@v3
+        uses: tailscale/github-action@v4
         with:
           oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
